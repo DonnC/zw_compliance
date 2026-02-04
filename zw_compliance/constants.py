@@ -8,13 +8,13 @@ class ZimraConstants:
     DEBIT_NOTE = "DebitNote"
 
     # Money Types
-    CASH = "Cash"
-    CARD = "Card"
-    MOBILE_WALLET = "MobileWallet"
-    COUPON = "Coupon"
-    CREDIT = "Credit"
-    BANK_TRANSFER = "BankTransfer"
-    OTHER = "Other"
+    MT_CASH = "Cash"
+    MT_CARD = "Card"
+    MT_MOBILE_WALLET = "MobileWallet"
+    MT_COUPON = "Coupon"
+    MT_CREDIT = "Credit"
+    MT_BANK_TRANSFER = "BankTransfer"
+    MT_OTHER = "Other"
 
     # Fiscal Day Statuses
     DAY_CLOSED = "FiscalDayClosed"
@@ -41,6 +41,18 @@ class ZimraConstants:
 
     # custom fields
     CUSTOM_FIELD_HSN_CODE = "custom_zimra_hsn_code"
+    CUSTOM_FIELD_VAT_ID = "custom_zimra_vat_id"
+    CUSTOM_FIELD_FISCAL_MODE = "custom_zimra_fiscalisation_mode"
+    CUSTOM_FIELD_FISCAL_DATE = "custom_zimra_fiscal_date"
+    CUSTOM_FIELD_IS_FISCALISED = "custom_zimra_is_fiscalised"
+    CUSTOM_FIELD_VERIFICIATION_MODE = "custom_zimra_verification_code"
+    CUSTOM_FIELD_GLOBAL_NO = "custom_zimra_global_no"
+    CUSTOM_FIELD_RECEIPT_COUNTER = "custom_zimra_receipt_counter"
+    CUSTOM_FIELD_RECEIPT_ID = "custom_zimra_receipt_id"
+    CUSTOM_FIELD_QR_CODE = "custom_zimra_qr_code"
+    CUSTOM_FIELD_SERVER_SIGN = "custom_zimra_server_signature"
+    CUSTOM_FIELD_HTML_QR_VIEW = "custom_zimra_qr_code_view"
+
 
     _DAY_STATUS_MAPPER_ = {
         "Closed": DAY_CLOSED,
