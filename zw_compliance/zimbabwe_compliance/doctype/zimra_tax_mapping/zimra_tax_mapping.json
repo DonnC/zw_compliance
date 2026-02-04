@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:ZTM-{zimra_tax_id}-{zimra_tax_percent}",
+ "creation": "2026-02-04 09:05:05.897476",
+ "description": "Allows to mantain erpnext's standard tax tpl while satisfying zimra's taxID requirements",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "zimra_tax_id",
+  "column_break_mgbc",
+  "zimra_tax_percent",
+  "column_break_kbmk",
+  "erpnext_tax_template"
+ ],
+ "fields": [
+  {
+   "fieldname": "zimra_tax_id",
+   "fieldtype": "Int",
+   "label": "ZIMRA Tax ID"
+  },
+  {
+   "fieldname": "column_break_mgbc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "zimra_tax_percent",
+   "fieldtype": "Float",
+   "label": "ZIMRA Tax Percent"
+  },
+  {
+   "fieldname": "column_break_kbmk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "erpnext_tax_template",
+   "fieldtype": "Link",
+   "label": "ERPNext Tax Template",
+   "options": "Sales Taxes and Charges Template"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-04 09:08:54.148498",
+ "modified_by": "Administrator",
+ "module": "Zimbabwe Compliance",
+ "name": "Zimra Tax Mapping",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

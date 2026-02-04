@@ -1,0 +1,192 @@
+{
+ "actions": [],
+ "creation": "2026-02-04 09:38:18.115931",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "taxpayer_info_section",
+  "taxpayer_name",
+  "taxpayer_tin",
+  "vat_number",
+  "column_break_dpky",
+  "address",
+  "account_setup_section",
+  "device_id",
+  "serial_no",
+  "column_break_vpxh",
+  "activation_key",
+  "api_url",
+  "state_management_section",
+  "global_receipt_no",
+  "receipt_counter",
+  "column_break_oydi",
+  "fiscal_day_no",
+  "fiscal_day_status",
+  "security_section",
+  "device_certificate",
+  "last_receipt_hash",
+  "column_break_enys",
+  "private_key",
+  "payment_mapping_section",
+  "table_payment_mapping"
+ ],
+ "fields": [
+  {
+   "fieldname": "taxpayer_info_section",
+   "fieldtype": "Section Break",
+   "label": "Taxpayer Info"
+  },
+  {
+   "fieldname": "taxpayer_name",
+   "fieldtype": "Data",
+   "label": "Taxpayer Name"
+  },
+  {
+   "fieldname": "taxpayer_tin",
+   "fieldtype": "Data",
+   "label": "Tin No."
+  },
+  {
+   "fieldname": "vat_number",
+   "fieldtype": "Data",
+   "label": "VAT No."
+  },
+  {
+   "fieldname": "column_break_dpky",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "account_setup_section",
+   "fieldtype": "Section Break",
+   "label": "Account Setup"
+  },
+  {
+   "fieldname": "device_id",
+   "fieldtype": "Int",
+   "label": "Device ID"
+  },
+  {
+   "fieldname": "serial_no",
+   "fieldtype": "Data",
+   "label": "Serial No"
+  },
+  {
+   "fieldname": "column_break_vpxh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "activation_key",
+   "fieldtype": "Data",
+   "label": "Activation Key"
+  },
+  {
+   "default": "https://fdmsapitest.zimra.co.zw",
+   "fieldname": "api_url",
+   "fieldtype": "Data",
+   "label": "API Url"
+  },
+  {
+   "fieldname": "state_management_section",
+   "fieldtype": "Section Break",
+   "label": "State Management",
+   "read_only": 1
+  },
+  {
+   "fieldname": "global_receipt_no",
+   "fieldtype": "Int",
+   "label": "Global Receipt No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "receipt_counter",
+   "fieldtype": "Int",
+   "label": "Receipt Counter",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_oydi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fiscal_day_no",
+   "fieldtype": "Int",
+   "label": "Fiscal Day No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fiscal_day_status",
+   "fieldtype": "Select",
+   "label": "Fiscal Day Status",
+   "options": "\nOpened\nClosed\nClose Initiated\nClose Failed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "security_section",
+   "fieldtype": "Section Break",
+   "label": "Security"
+  },
+  {
+   "fieldname": "device_certificate",
+   "fieldtype": "Attach",
+   "label": "Device Certificate"
+  },
+  {
+   "fieldname": "last_receipt_hash",
+   "fieldtype": "Data",
+   "label": "Last Receipt Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_enys",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "private_key",
+   "fieldtype": "Attach",
+   "label": "Private Key",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_mapping_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Mapping"
+  },
+  {
+   "fieldname": "table_payment_mapping",
+   "fieldtype": "Table",
+   "options": "Zimra Payment Mode Mapping",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-02-04 11:56:37.446565",
+ "modified_by": "Administrator",
+ "module": "Zimbabwe Compliance",
+ "name": "Zimra Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

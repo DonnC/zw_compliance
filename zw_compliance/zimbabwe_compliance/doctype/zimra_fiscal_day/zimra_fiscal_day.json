@@ -1,0 +1,162 @@
+{
+ "actions": [],
+ "autoname": "format:ZFD-{fiscal_day_no}-{DD}.{MM}.{YY}",
+ "creation": "2026-02-04 10:15:17.263384",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "fiscal_metadata_section",
+  "device_id",
+  "fiscal_day_no",
+  "fiscal_day_opened",
+  "column_break_eywn",
+  "serial_id",
+  "status",
+  "fiscal_day_closed",
+  "document_quantities_section",
+  "invoice_qty",
+  "credit_note_qty",
+  "debit_note_qty",
+  "total_documents",
+  "column_break_zbfl",
+  "invoice_total_amount",
+  "credit_note_total_amount",
+  "debit_note_total_amount",
+  "grand_total_amount",
+  "daily_totals_per_currency_section",
+  "table_daily_totals_per_currency"
+ ],
+ "fields": [
+  {
+   "fieldname": "fiscal_metadata_section",
+   "fieldtype": "Section Break",
+   "label": "Fiscal Metadata",
+   "read_only": 1
+  },
+  {
+   "fieldname": "device_id",
+   "fieldtype": "Data",
+   "label": "Device ID"
+  },
+  {
+   "fieldname": "fiscal_day_no",
+   "fieldtype": "Int",
+   "label": "Fiscal Day No"
+  },
+  {
+   "fieldname": "fiscal_day_opened",
+   "fieldtype": "Datetime",
+   "label": "Fiscal Day Opened"
+  },
+  {
+   "fieldname": "column_break_eywn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "serial_id",
+   "fieldtype": "Data",
+   "label": "Serial ID"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Fiscal Day Status",
+   "options": "\nClosed\nClose Failed"
+  },
+  {
+   "fieldname": "fiscal_day_closed",
+   "fieldtype": "Datetime",
+   "label": "Fiscal Day Closed"
+  },
+  {
+   "description": "Total count and sum of all standard fiscal invoices",
+   "fieldname": "document_quantities_section",
+   "fieldtype": "Section Break",
+   "label": "Document Quantities",
+   "read_only": 1
+  },
+  {
+   "fieldname": "invoice_qty",
+   "fieldtype": "Int",
+   "label": "Invoice Qty"
+  },
+  {
+   "fieldname": "credit_note_qty",
+   "fieldtype": "Int",
+   "label": "Credit Note Qty"
+  },
+  {
+   "fieldname": "debit_note_qty",
+   "fieldtype": "Int",
+   "label": "Debit Note Qty"
+  },
+  {
+   "fieldname": "total_documents",
+   "fieldtype": "Int",
+   "label": "Total Documents"
+  },
+  {
+   "fieldname": "column_break_zbfl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "invoice_total_amount",
+   "fieldtype": "Currency",
+   "label": "Invoice Total Amount"
+  },
+  {
+   "fieldname": "debit_note_total_amount",
+   "fieldtype": "Currency",
+   "label": "Debit Note Total Amount"
+  },
+  {
+   "fieldname": "grand_total_amount",
+   "fieldtype": "Currency",
+   "label": "Grand Total Amount"
+  },
+  {
+   "fieldname": "daily_totals_per_currency_section",
+   "fieldtype": "Section Break",
+   "label": "Daily Totals per Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "credit_note_total_amount",
+   "fieldtype": "Currency",
+   "label": "Credit Note Total Amount"
+  },
+  {
+   "fieldname": "table_daily_totals_per_currency",
+   "fieldtype": "Table",
+   "options": "Zimra Fiscal Day Detail"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-04 10:51:48.334637",
+ "modified_by": "Administrator",
+ "module": "Zimbabwe Compliance",
+ "name": "Zimra Fiscal Day",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

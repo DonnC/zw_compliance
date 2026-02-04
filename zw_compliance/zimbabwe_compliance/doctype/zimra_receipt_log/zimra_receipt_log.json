@@ -1,0 +1,132 @@
+{
+ "actions": [],
+ "allow_copy": 1,
+ "autoname": "format:Zimra.Log.{receipt_id}.{DD}.{MM}.{YY}",
+ "creation": "2026-02-04 09:14:04.884108",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_doctype",
+  "reference_docname",
+  "receipt_id",
+  "total_amount",
+  "column_break_ermv",
+  "is_fiscalised",
+  "money_type_code",
+  "fiscalisation_mode",
+  "receipt_hash",
+  "receipt_tax_details_section",
+  "table_tax_details",
+  "raw_zimra_response_section",
+  "raw_zimra_response"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reference Doctype",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "reference_docname",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Reference Docname",
+   "options": "reference_doctype"
+  },
+  {
+   "fieldname": "receipt_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Receipt ID"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount"
+  },
+  {
+   "fieldname": "column_break_ermv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_fiscalised",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Fiscalised?"
+  },
+  {
+   "fieldname": "money_type_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Money Type Code"
+  },
+  {
+   "fieldname": "receipt_hash",
+   "fieldtype": "Small Text",
+   "label": "Receipt Hash"
+  },
+  {
+   "fieldname": "receipt_tax_details_section",
+   "fieldtype": "Section Break",
+   "label": "Receipt Tax Details"
+  },
+  {
+   "fieldname": "table_tax_details",
+   "fieldtype": "Table",
+   "label": "table_tax_details",
+   "options": "Zimra Receipt Tax Detail"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "raw_zimra_response_section",
+   "fieldtype": "Section Break",
+   "label": "Raw ZIMRA Response"
+  },
+  {
+   "fieldname": "raw_zimra_response",
+   "fieldtype": "Text"
+  },
+  {
+   "default": "New Submission",
+   "fieldname": "fiscalisation_mode",
+   "fieldtype": "Select",
+   "label": "Fiscalisation Mode",
+   "options": "\nNew Submission\nInherited from POS\nManual Adjustment"
+  }
+ ],
+ "grid_page_length": 50,
+ "in_create": 1,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-04 10:55:19.831105",
+ "modified_by": "Administrator",
+ "module": "Zimbabwe Compliance",
+ "name": "Zimra Receipt Log",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
