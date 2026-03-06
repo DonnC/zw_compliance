@@ -86,7 +86,7 @@ app_license = "mit"
 # ------------
 
 # before_install = "zw_compliance.install.before_install"
-# after_install = "zw_compliance.install.after_install"
+after_install = "zw_compliance.install.after_install"
 
 # Uninstallation
 # ------------
