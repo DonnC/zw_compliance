@@ -132,34 +132,34 @@ after_install = "zw_compliance.install.after_install"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Sales Invoice": {
+		"on_submit": "zw_compliance.doc_events.fiscalise_on_submit",
+	},
+	"POS Invoice": {
+		"on_submit": "zw_compliance.doc_events.fiscalise_on_submit",
+	},
+}
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"zw_compliance.tasks.all"
-# 	],
-# 	"daily": [
-# 		"zw_compliance.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"zw_compliance.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"zw_compliance.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"zw_compliance.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"cron": {
+		# every 5 minutes: cheap to check, only acts near the configured close time
+		# or when there's a non-empty offline queue
+		"*/5 * * * *": [
+			"zw_compliance.tasks.scheduled_close_day",
+			"zw_compliance.tasks.scheduled_flush_offline_queue",
+		],
+	},
+	"hourly": [
+		"zw_compliance.tasks.scheduled_ping",
+	],
+	"daily": [
+		"zw_compliance.tasks.check_certificate_renewal",
+	],
+}
 
 # Testing
 # -------

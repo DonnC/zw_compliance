@@ -1,22 +1,32 @@
 {
  "actions": [],
  "allow_copy": 1,
- "autoname": "format:Zimra.Log.{receipt_id}.{DD}.{MM}.{YY}",
  "creation": "2026-02-04 09:14:04.884108",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "reference_doctype",
   "reference_docname",
+  "receipt_type",
+  "column_break_ref_1",
   "receipt_id",
+  "receipt_global_no",
+  "receipt_counter",
+  "amounts_section",
+  "currency",
   "total_amount",
   "column_break_ermv",
   "is_fiscalised",
-  "money_type_code",
   "fiscalisation_mode",
-  "receipt_hash",
+  "signing_section",
+  "device_signature_hash",
+  "device_signature",
+  "column_break_sign_1",
+  "qr_data",
   "receipt_tax_details_section",
   "table_tax_details",
+  "validation_errors_section",
+  "validation_errors",
   "raw_zimra_response_section",
   "raw_zimra_response"
  ],
@@ -36,10 +46,44 @@
    "options": "reference_doctype"
   },
   {
+   "fieldname": "receipt_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Receipt Type",
+   "options": "\nFiscalInvoice\nCreditNote\nDebitNote"
+  },
+  {
+   "fieldname": "column_break_ref_1",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "receipt_id",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Receipt ID"
+  },
+  {
+   "fieldname": "receipt_global_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Global No"
+  },
+  {
+   "fieldname": "receipt_counter",
+   "fieldtype": "Int",
+   "label": "Receipt Counter"
+  },
+  {
+   "fieldname": "amounts_section",
+   "fieldtype": "Section Break",
+   "label": "Amounts"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
   },
   {
    "fieldname": "total_amount",
@@ -60,16 +104,36 @@
    "label": "Is Fiscalised?"
   },
   {
-   "fieldname": "money_type_code",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Money Type Code"
+   "default": "New Submission",
+   "fieldname": "fiscalisation_mode",
+   "fieldtype": "Select",
+   "label": "Fiscalisation Mode",
+   "options": "\nNew Submission\nInherited from POS\nManual Adjustment\nQueued (Offline)"
   },
   {
-   "fieldname": "receipt_hash",
+   "collapsible": 1,
+   "fieldname": "signing_section",
+   "fieldtype": "Section Break",
+   "label": "Signing"
+  },
+  {
+   "fieldname": "device_signature_hash",
    "fieldtype": "Small Text",
-   "label": "Receipt Hash"
+   "label": "Device Signature Hash"
+  },
+  {
+   "fieldname": "device_signature",
+   "fieldtype": "Small Text",
+   "label": "Device Signature"
+  },
+  {
+   "fieldname": "column_break_sign_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "qr_data",
+   "fieldtype": "Small Text",
+   "label": "QR Verification Data"
   },
   {
    "fieldname": "receipt_tax_details_section",
@@ -79,8 +143,21 @@
   {
    "fieldname": "table_tax_details",
    "fieldtype": "Table",
-   "label": "table_tax_details",
+   "label": "Tax Details",
    "options": "Zimra Receipt Tax Detail"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "validation_errors",
+   "fieldname": "validation_errors_section",
+   "fieldtype": "Section Break",
+   "label": "Validation Errors"
+  },
+  {
+   "fieldname": "validation_errors",
+   "fieldtype": "Table",
+   "label": "Validation Errors",
+   "options": "Zimra Validation Error"
   },
   {
    "collapsible": 1,
@@ -90,25 +167,18 @@
   },
   {
    "fieldname": "raw_zimra_response",
-   "fieldtype": "Text"
-  },
-  {
-   "default": "New Submission",
-   "fieldname": "fiscalisation_mode",
-   "fieldtype": "Select",
-   "label": "Fiscalisation Mode",
-   "options": "\nNew Submission\nInherited from POS\nManual Adjustment"
+   "fieldtype": "Code",
+   "options": "JSON"
   }
  ],
  "grid_page_length": 50,
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-04 10:55:19.831105",
+ "modified": "2026-09-08 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Zimbabwe Compliance",
  "name": "Zimra Receipt Log",
- "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

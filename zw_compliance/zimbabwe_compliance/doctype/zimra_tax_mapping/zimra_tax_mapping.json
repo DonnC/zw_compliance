@@ -3,21 +3,44 @@
  "allow_rename": 1,
  "autoname": "format:ZTM-{zimra_tax_id}-{zimra_tax_percent}",
  "creation": "2026-02-04 09:05:05.897476",
- "description": "Allows to mantain erpnext's standard tax tpl while satisfying zimra's taxID requirements",
+ "description": "Maps ZIMRA's numeric tax IDs (from GetConfig) to ERPNext tax templates/accounts, so the fiscal engine never has to guess which ERPNext tax a receipt line belongs to.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "zimra_tax_id",
+  "zimra_tax_code",
+  "zimra_tax_name",
   "column_break_mgbc",
   "zimra_tax_percent",
+  "valid_from",
+  "valid_till",
+  "erpnext_section",
+  "erpnext_tax_template",
+  "erpnext_item_tax_template",
   "column_break_kbmk",
-  "erpnext_tax_template"
+  "erpnext_account",
+  "purchase_section",
+  "erpnext_purchase_tax_template",
+  "erpnext_purchase_item_tax_template",
+  "column_break_purchase_1",
+  "erpnext_input_account"
  ],
  "fields": [
   {
    "fieldname": "zimra_tax_id",
    "fieldtype": "Int",
-   "label": "ZIMRA Tax ID"
+   "label": "ZIMRA Tax ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "zimra_tax_code",
+   "fieldtype": "Data",
+   "label": "ZIMRA Tax Code"
+  },
+  {
+   "fieldname": "zimra_tax_name",
+   "fieldtype": "Data",
+   "label": "ZIMRA Tax Name"
   },
   {
    "fieldname": "column_break_mgbc",
@@ -29,20 +52,78 @@
    "label": "ZIMRA Tax Percent"
   },
   {
+   "fieldname": "valid_from",
+   "fieldtype": "Data",
+   "label": "Valid From"
+  },
+  {
+   "fieldname": "valid_till",
+   "fieldtype": "Data",
+   "label": "Valid Till"
+  },
+  {
+   "fieldname": "erpnext_section",
+   "fieldtype": "Section Break",
+   "label": "ERPNext Mapping"
+  },
+  {
+   "description": "Matched against Sales Invoice / POS Invoice's document-level Taxes and Charges Template.",
+   "fieldname": "erpnext_tax_template",
+   "fieldtype": "Link",
+   "label": "Sales Taxes and Charges Template",
+   "options": "Sales Taxes and Charges Template"
+  },
+  {
+   "description": "Matched against an individual line's Item Tax Template, when set - takes priority over the document-level template.",
+   "fieldname": "erpnext_item_tax_template",
+   "fieldtype": "Link",
+   "label": "Item Tax Template",
+   "options": "Item Tax Template"
+  },
+  {
    "fieldname": "column_break_kbmk",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "erpnext_tax_template",
+   "fieldname": "erpnext_account",
    "fieldtype": "Link",
-   "label": "ERPNext Tax Template",
-   "options": "Sales Taxes and Charges Template"
+   "label": "Output VAT Account",
+   "options": "Account"
+  },
+  {
+   "collapsible": 1,
+   "description": "ZIMRA FDMS only fiscalises sales (this device signs receipts to customers, not purchases). These are provisioned so Purchase Invoices still apply the correct VAT rate for input tax credit / VAT return reconciliation, using a separate input VAT account and templates from the sales side.",
+   "fieldname": "purchase_section",
+   "fieldtype": "Section Break",
+   "label": "Purchase-Side Mapping (Input VAT)"
+  },
+  {
+   "fieldname": "erpnext_purchase_tax_template",
+   "fieldtype": "Link",
+   "label": "Purchase Taxes and Charges Template",
+   "options": "Purchase Taxes and Charges Template"
+  },
+  {
+   "fieldname": "erpnext_purchase_item_tax_template",
+   "fieldtype": "Link",
+   "label": "Purchase Item Tax Template",
+   "options": "Item Tax Template"
+  },
+  {
+   "fieldname": "column_break_purchase_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "erpnext_input_account",
+   "fieldtype": "Link",
+   "label": "Input VAT Account",
+   "options": "Account"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-04 09:08:54.148498",
+ "modified": "2026-09-08 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Zimbabwe Compliance",
  "name": "Zimra Tax Mapping",

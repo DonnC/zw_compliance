@@ -10,6 +10,7 @@
   "currency",
   "tax_id",
   "tax_percent",
+  "money_type",
   "column_break_cids",
   "net_amount",
   "column_break_ofog",
@@ -34,6 +35,12 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Tax Percent"
+  },
+  {
+   "fieldname": "money_type",
+   "fieldtype": "Select",
+   "label": "Money Type",
+   "options": "\nCash\nCard\nMobileWallet\nCoupon\nCredit\nBankTransfer\nOther"
   },
   {
    "fieldname": "column_break_cids",
