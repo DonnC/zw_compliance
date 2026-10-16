@@ -53,3 +53,7 @@ jspm_packages/
 
 # Aider AI Chat
 .aider*
+
+# ZIMRA's specification PDF is ZIMRA copyright; obtain it from ZIMRA (see docs/COMPLIANCE.md)
+docs/*.pdf
+.pytest_cache/

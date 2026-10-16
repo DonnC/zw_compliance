@@ -1,0 +1,76 @@
+{#- Receipt48 view, spec v7.2 §10.1. Field numbers [n] refer to §10.3. Expects `z` = zimra_fiscal_receipt(doc). -#}
+{%- from "zw_compliance/templates/zimra/_macros.html" import money, qty, fdate, tax_label -%}
+{%- set r = z.record -%}
+<div class="zimra-r48">
+	<div class="c b">{{ r.taxpayer_name }}</div>{# [2] #}
+	<div class="c">TIN: {{ r.taxpayer_tin }}</div>{# [3] #}
+	{% if r.vat_number %}<div class="c">VAT No: {{ r.vat_number }}</div>{% endif %}{# [4] #}
+	{% if r.branch_name and r.branch_name != r.taxpayer_name %}<div class="c">{{ r.branch_name }}</div>{% endif %}{# [5] #}
+	{% if r.branch_address %}<div class="c">{{ r.branch_address }}</div>{% endif %}{# [6] #}
+	{% if r.branch_email %}<div class="c">{{ r.branch_email }}</div>{% endif %}{# [7] #}
+	{% if r.branch_phone %}<div class="c">{{ r.branch_phone }}</div>{% endif %}{# [8] #}
+	<div class="rule"></div>
+	<div class="c b">{{ z.title }}</div>{# [9] #}
+	<div class="rule"></div>
+	{% if z.buyer %}{# [10]-[16] #}
+		<div class="c">{{ _("Buyer") }}</div>
+		<div class="c">{{ z.buyer.register_name }}</div>
+		{% if z.buyer.trade_name %}<div class="c">{{ z.buyer.trade_name }}</div>{% endif %}
+		<div class="c">TIN: {{ z.buyer.tin }}</div>
+		{% if z.buyer.vat_number %}<div class="c">VAT: {{ z.buyer.vat_number }}</div>{% endif %}
+		{% if z.buyer.address %}<div class="c">{{ [z.buyer.address.house_no, z.buyer.address.street, z.buyer.address.city, z.buyer.address.province] | select | join(", ") }}</div>{% endif %}
+		{% if z.buyer.contacts and z.buyer.contacts.email %}<div class="c">{{ z.buyer.contacts.email }}</div>{% endif %}
+		{% if z.buyer.contacts and z.buyer.contacts.phone_no %}<div class="c">{{ z.buyer.contacts.phone_no }}</div>{% endif %}
+		<div class="rule"></div>
+	{% endif %}
+	<div class="row"><span>Invoice No: {{ r.receipt_counter }}/{{ r.receipt_global_no }}</span><span>Fiscal day No: {{ r.fiscal_day_no }}</span></div>{# [17]-[19] #}
+	<div>Customer reference No: {{ r.invoice_no }}</div>{# [20] #}
+	<div>Device Serial No: {{ r.device_serial_no }}</div>{# [21] #}
+	<div>Device ID: {{ r.device_id }}</div>{# [22] #}
+	<div>Date: {{ fdate(z.receipt.date) }}</div>{# [23] #}
+	{% if r.receipt_type != "FiscalInvoice" %}{# [24]-[28] #}
+		<div class="rule"></div>
+		<div class="c b">{{ "CREDITED INVOICE" if r.receipt_type == "CreditNote" else "DEBITED INVOICE" }}</div>
+		<div>Device Serial No: {{ r.original_device_serial_no }}</div>
+		<div class="row"><span>Invoice No: {{ r.original_receipt_global_no }}</span><span>Date: {{ fdate(r.original_receipt_date) }}</span></div>
+		<div>Customer reference No: {{ r.original_invoice_no }}</div>
+	{% endif %}
+	<div class="rule"></div>
+	<div class="row b"><span>{{ _("Description") }}</span><span>{{ _("Amount") }}</span></div>
+	<div class="rule"></div>
+	{% for l in z.lines %}{# [30]-[34] #}
+		<div class="row"><span class="name">{{ "Discount: " if l.is_discount else "" }}{{ l.name }}</span><span class="amt">{{ money(l.total) }} {{ l.tax_code }}</span></div>
+		{% if l.quantity != 1 %}<div class="sub">{{ qty(l.quantity) }}{% if l.price is not none %} each @ {{ money(l.price) }}{% endif %}</div>{% endif %}
+	{% endfor %}
+	<div class="rule"></div>
+	<div class="row b"><span>{{ _("Total") }} {{ r.receipt_currency }}</span><span>{{ money(z.receipt.total) }}</span></div>{# [35]-[36] #}
+	{% for p in z.payments %}<div class="row sub"><span>{{ r.receipt_currency }} {{ p.money_type }}</span><span>{{ money(p.amount) }}</span></div>{% endfor %}{# [37]-[38] #}
+	<div class="rule"></div>
+	<div class="row"><span>{{ _("Number of Items") }}</span><span>{{ qty(z.number_of_items) }}</span></div>{# [39] #}
+	{% if z.is_vat_payer %}{# [40]-[44] tax table, VAT payers only #}
+		{% for t in z.taxes %}
+			<div class="rule"></div>
+			<div class="row"><span>{{ _("Net Amount") }}</span><span>{{ money(t.net) }}</span></div>
+			<div class="row"><span>{{ tax_label(t) }}</span><span>{{ money(t.tax) }}</span></div>
+			<div class="row"><span>{{ _("Gross Amount") }}</span><span>{{ money(t.gross) }}</span></div>
+		{% endfor %}
+	{% endif %}
+	<div class="rule"></div>
+	{% if z.receipt.notes %}<div>{{ z.receipt.notes }}</div>{% endif %}{# [45] #}
+	<div class="c qr">{{ zimra_qr_svg(r.qr_url, 3) }}</div>{# [46] #}
+	<div class="c">{{ _("Verification code:") }}</div>
+	<div class="c b">{{ r.verification_code }}</div>{# [47] #}
+	<div class="c">{{ _("You can verify this receipt manually at") }}</div>
+	<div class="c">{{ z.verify_url }}</div>{# [48] #}
+</div>
+<style>
+	.zimra-r48 { font-family: "Courier New", monospace; font-size: 11px; width: 72mm; margin: 0 auto; line-height: 1.35; }
+	.zimra-r48 .c { text-align: center; }
+	.zimra-r48 .b { font-weight: bold; }
+	.zimra-r48 .row { display: flex; justify-content: space-between; gap: 6px; }
+	.zimra-r48 .row .name { flex: 1; word-break: break-word; }
+	.zimra-r48 .row .amt { white-space: nowrap; }
+	.zimra-r48 .sub { padding-left: 12px; }
+	.zimra-r48 .rule { border-top: 1px dashed #000; margin: 3px 0; }
+	.zimra-r48 .qr svg { width: 34mm; height: 34mm; }
+</style>

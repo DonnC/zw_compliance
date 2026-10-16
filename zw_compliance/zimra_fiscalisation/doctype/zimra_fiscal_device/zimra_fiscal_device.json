@@ -1,0 +1,495 @@
+{
+ "actions": [],
+ "autoname": "format:ZFD-{device_id}",
+ "creation": "2026-10-16 09:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "device_name",
+  "company",
+  "environment",
+  "status",
+  "column_break_1",
+  "device_id",
+  "serial_no",
+  "model_name",
+  "model_version",
+  "previous_last_receipt_global_no",
+  "is_demo",
+  "section_break_1",
+  "is_default",
+  "print_form",
+  "column_break_2",
+  "pos_profiles",
+  "section_break_2",
+  "activation_key",
+  "section_break_3",
+  "taxpayer_name",
+  "taxpayer_tin",
+  "vat_number",
+  "branch_name",
+  "column_break_3",
+  "branch_address",
+  "branch_email",
+  "branch_phone",
+  "section_break_4",
+  "operating_mode",
+  "day_max_hours",
+  "day_end_notification_hours",
+  "column_break_4",
+  "qr_url",
+  "last_config_sync",
+  "applicable_taxes",
+  "section_break_5",
+  "certificate_valid_till",
+  "certificate_issued_on",
+  "column_break_5",
+  "certificate",
+  "private_key",
+  "section_break_6",
+  "current_fiscal_day",
+  "last_fiscal_day_no",
+  "last_receipt_global_no",
+  "column_break_6",
+  "last_sync",
+  "last_sync_error",
+  "last_ping",
+  "next_ping_at",
+  "reporting_frequency",
+  "clock_offset_ms",
+  "clock_samples",
+  "section_break_7",
+  "api_url",
+  "column_break_7",
+  "server_ca_certificate"
+ ],
+ "fields": [
+  {
+   "description": "A name your staff recognise, e.g. Harare Till 1.",
+   "fieldname": "device_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Device Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "default": "Test",
+   "fieldname": "environment",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Environment",
+   "options": "Test\nProduction",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nTaxpayer Verified\nRegistered\nActive\nDisabled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "device_id",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "ZIMRA Device ID",
+   "reqd": 1,
+   "set_only_once": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "serial_no",
+   "fieldtype": "Data",
+   "label": "Device Serial No",
+   "length": 20,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "description": "Exactly as registered with ZIMRA (DEV06).",
+   "fieldname": "model_name",
+   "fieldtype": "Data",
+   "label": "Device Model Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "model_version",
+   "fieldtype": "Data",
+   "label": "Device Model Version",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:['Draft','Taxpayer Verified','Registered'].includes(doc.status)",
+   "description": "Only if this ZIMRA device ID was used by other software before: the highest receiptGlobalNo it issued. Numbering continues after the larger of this and ZIMRA's figure.",
+   "fieldname": "previous_last_receipt_global_no",
+   "fieldtype": "Int",
+   "label": "Last Receipt Global No of Previous Software"
+  },
+  {
+   "default": "0",
+   "depends_on": "is_demo",
+   "description": "Created by the demo seeder (zw_compliance.fiscalisation.demo). Never connects to ZIMRA; removed by demo.wipe.",
+   "fieldname": "is_demo",
+   "fieldtype": "Check",
+   "label": "Demo Device",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break",
+   "label": "Usage"
+  },
+  {
+   "description": "Used for invoices that are not tied to a POS Profile listed on any device.",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "Default Device for Company"
+  },
+  {
+   "description": "Blank: POS Invoices print as Receipt48, Sales Invoices as InvoiceA4.",
+   "fieldname": "print_form",
+   "fieldtype": "Select",
+   "label": "Receipt Print Form",
+   "options": "\nReceipt48\nInvoiceA4"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pos_profiles",
+   "fieldtype": "Table",
+   "label": "POS Profiles",
+   "options": "Zimra Device POS Profile"
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break",
+   "label": "Activation",
+   "permlevel": 1
+  },
+  {
+   "description": "8-character key issued by ZIMRA for this device. Only needed to register.",
+   "fieldname": "activation_key",
+   "fieldtype": "Password",
+   "label": "Activation Key",
+   "length": 8,
+   "permlevel": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break",
+   "label": "Taxpayer (from ZIMRA)"
+  },
+  {
+   "fieldname": "taxpayer_name",
+   "fieldtype": "Data",
+   "label": "Taxpayer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "taxpayer_tin",
+   "fieldtype": "Data",
+   "label": "TIN",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_number",
+   "fieldtype": "Data",
+   "label": "VAT Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "branch_name",
+   "fieldtype": "Data",
+   "label": "Branch Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "branch_address",
+   "fieldtype": "Small Text",
+   "label": "Branch Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "branch_email",
+   "fieldtype": "Data",
+   "label": "Branch Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "branch_phone",
+   "fieldtype": "Data",
+   "label": "Branch Phone",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break",
+   "label": "Configuration (from ZIMRA)"
+  },
+  {
+   "fieldname": "operating_mode",
+   "fieldtype": "Data",
+   "label": "Operating Mode",
+   "read_only": 1
+  },
+  {
+   "fieldname": "day_max_hours",
+   "fieldtype": "Int",
+   "label": "Maximum Fiscal Day (hours)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "day_end_notification_hours",
+   "fieldtype": "Int",
+   "label": "End-of-day Notice (hours)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "qr_url",
+   "fieldtype": "Data",
+   "label": "QR Verification URL",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_config_sync",
+   "fieldtype": "Datetime",
+   "label": "Configuration Synced",
+   "read_only": 1
+  },
+  {
+   "fieldname": "applicable_taxes",
+   "fieldtype": "Table",
+   "label": "Applicable Taxes",
+   "options": "Zimra Device Tax",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break",
+   "label": "Certificate",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "certificate_valid_till",
+   "fieldtype": "Datetime",
+   "label": "Certificate Valid Till",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "certificate_issued_on",
+   "fieldtype": "Datetime",
+   "label": "Certificate Issued On",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "certificate",
+   "fieldtype": "Long Text",
+   "label": "Device Certificate",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "private_key",
+   "fieldtype": "Password",
+   "hidden": 1,
+   "label": "Device Private Key",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break",
+   "label": "Fiscal State"
+  },
+  {
+   "fieldname": "current_fiscal_day",
+   "fieldtype": "Link",
+   "label": "Current Fiscal Day",
+   "options": "Zimra Fiscal Day",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_fiscal_day_no",
+   "fieldtype": "Int",
+   "label": "Last Fiscal Day No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_receipt_global_no",
+   "fieldtype": "Int",
+   "label": "Last Receipt Global No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_sync",
+   "fieldtype": "Datetime",
+   "label": "Last Sync",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_sync_error",
+   "fieldtype": "Small Text",
+   "label": "Last Sync Error",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_ping",
+   "fieldtype": "Datetime",
+   "label": "Last Ping",
+   "read_only": 1
+  },
+  {
+   "fieldname": "next_ping_at",
+   "fieldtype": "Datetime",
+   "label": "Next Ping",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reporting_frequency",
+   "fieldtype": "Int",
+   "label": "Ping Every (minutes)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "clock_offset_ms",
+   "fieldtype": "Float",
+   "label": "Clock Offset (ms)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "clock_samples",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Clock Samples",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.environment=='Test'",
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break",
+   "label": "Test Environment Overrides"
+  },
+  {
+   "depends_on": "eval:doc.environment=='Test'",
+   "description": "Only for the Test environment, e.g. a local FDMS simulator. Leave blank to use ZIMRA's test gateway.",
+   "fieldname": "api_url",
+   "fieldtype": "Data",
+   "label": "API URL Override"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.environment=='Test'",
+   "description": "CA certificate that signed the override server's TLS certificate.",
+   "fieldname": "server_ca_certificate",
+   "fieldtype": "Long Text",
+   "label": "Trusted CA (PEM)"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-16 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "Zimra Fiscal Device",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "ZIMRA Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "ZIMRA Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "ZIMRA User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "device_name,company",
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "device_name",
+ "track_changes": 1
+}

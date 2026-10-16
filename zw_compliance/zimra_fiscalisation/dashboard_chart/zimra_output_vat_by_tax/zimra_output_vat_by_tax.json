@@ -1,0 +1,38 @@
+{
+ "chart_name": "ZIMRA Output VAT by Tax",
+ "chart_type": "Custom",
+ "creation": "2026-10-16 09:00:00.000000",
+ "custom_options": "{\"fieldtype\": \"Currency\", \"barOptions\": {\"stacked\": 0}}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "dynamic_filters_json": "{\"company\": \"frappe.defaults.get_user_default(\\\"Company\\\")\"}",
+ "filters_json": "{}",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-10-16 19:50:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "ZIMRA Output VAT by Tax",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "ZIMRA Manager"
+  },
+  {
+   "role": "ZIMRA User"
+  },
+  {
+   "role": "Accounts Manager"
+  }
+ ],
+ "source": "ZIMRA Output VAT by Tax",
+ "timeseries": 0,
+ "type": "Bar",
+ "use_report_chart": 0,
+ "y_axis": []
+}

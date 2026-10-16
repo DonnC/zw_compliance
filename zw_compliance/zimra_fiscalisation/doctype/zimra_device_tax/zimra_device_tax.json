@@ -1,0 +1,73 @@
+{
+ "actions": [],
+ "creation": "2026-10-16 09:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tax_id",
+  "tax_name",
+  "tax_percent",
+  "is_exempt",
+  "valid_from",
+  "valid_till"
+ ],
+ "fields": [
+  {
+   "fieldname": "tax_id",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Tax ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tax_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tax Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tax_percent",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Tax %",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "is_exempt",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Exempt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Valid From",
+   "read_only": 1
+  },
+  {
+   "fieldname": "valid_till",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Valid Till",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-16 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "Zimra Device Tax",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

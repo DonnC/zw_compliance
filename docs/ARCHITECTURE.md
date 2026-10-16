@@ -1,279 +1,267 @@
 # Architecture
 
-Technical detail for anyone modifying `zw_compliance/fdms/` or
-`zw_compliance/zimra/`, or porting this engine somewhere else. If you just
-want to use the app, see the [README](../README.md).
+This document explains how `zw_compliance` turns an ERPNext site into a ZIMRA
+fiscal device, and why it is built this way. Section numbers (§) refer to
+ZIMRA's *Fiscal Device Gateway API* v7.2, by the numbers of the headings in
+the body of the document (the table of contents is one number off from §4.8
+onwards).
 
-## 1. Why `fdms/` has no Frappe imports
+## Goals
 
-`fdms/` is a byte-exact reimplementation of ZIMRA's FDMS protocol: canonical
-signing strings, the receipt-to-receipt hash chain, fiscal-day counter
-accumulation, ASN.1 DER signature encoding, the offline-queue crash-safety
-protocol. A single off-by-one-field, wrong sort order, or float-rounding
-difference here produces a receipt FDMS silently signs wrong (accepted, but
-un-auditable) or rejects outright (RCPT010, RCPT012, RCPT030...). Keeping
-this package free of Frappe means:
+1. **Never break the sequence.** ZIMRA identifies a receipt by `receiptGlobalNo`, chains each receipt to the previous one by hash, and refuses to close a day with a gap. A missing, duplicated or reordered number is a permanent compliance defect. Everything else is subordinate to this.
+2. **Never block the business.** Invoicing must not stop when the internet does.
+3. **Online in real time.** When ZIMRA is reachable, a receipt is accepted seconds after submit (§9 req. 14).
+4. **The ERPNext way.** Native documents, permissions, print formats, reports, accounts and templates. No sidecar service.
 
-- It can be tested with plain `pytest`, fast, with no site/database.
-- It can be checked against
-  [zimra-fdms](https://www.zimrasdk.com/)'s own published conformance
-  vectors (`fdms/tests/test_vectors.py`, `fdms/tests/zimra-fdms-vectors.json`)
-  byte-for-byte, independent of anything ERPNext-specific.
-- It stays reusable if this protocol logic is ever needed outside ERPNext.
-
-Everything that touches Frappe - the site, the database, File attachments,
-background jobs - lives one layer up, in `zw_compliance/zimra/`.
-
-## 2. Deliberate deviations from the reference TypeScript SDK
-
-`fdms/` is a faithful port of
-[zimra-fdms](https://github.com/munashe-chivandire/zimra-fdms)'s `src/core/`
-for everything ZIMRA validates byte-exact: money/cents handling, canonical
-signing strings, tax rounding, counter accumulation and sort order, the hash
-chain, QR format, and the offline-queue append-then-apply ordering. Three
-things were deliberately *not* ported 1:1, because a mature Python crypto
-library does the job more safely than hand-porting hand-rolled TypeScript:
-
-1. **CSR building** (`fdms/csr.py`). The TS SDK hand-rolls a DER writer
-   (`asn1.ts`/`csr.ts`) because browser/Android/HSM signers can't export key
-   material - it has to build the `CertificationRequestInfo` bytes itself
-   and only ask an abstract `Signer` for a raw signature over them. This
-   Python port always holds the EC private key locally (via `cryptography`),
-   so `fdms/csr.py` builds the PKCS#10 request with
-   `cryptography.x509.CertificateSigningRequestBuilder` instead: same
-   result (CN=`ZIMRA-{serial}-{deviceId:010d}`, secp256r1,
-   ecdsa-with-SHA256, no attributes), fewer places a hand-rolled ASN.1
-   encoder could be subtly wrong.
-2. **Sync, not async.** The TS SDK is async because it targets browsers and
-   Android. Frappe request handlers and background jobs are sync, so every
-   `fdms/` method is a plain synchronous call.
-3. **The `Signer` protocol still exists** (`fdms/signer.py`) even though
-   `zimra/` always has direct key access, so a future HSM/cloud-KMS-backed
-   signer remains possible without touching `device.py`, and tests can
-   inject a fake signer (`fdms/tests/fakes.py`).
-
-Everything else - `signing.py`, `device.py`'s counter/tax maths, `queue.py`,
-`journal.py`, `qr.py`, `errors.py`, `clock.py` - is a direct, careful port.
-
-## 3. Canonical signing strings
-
-The single most safety-critical part of the port. Two canonical strings
-exist, both pure concatenation with **no delimiters**, and both must match
-FDMS's own construction byte-for-byte or the ECDSA signature simply won't
-verify.
-
-### Receipt signing string (`fdms/signing.py:receipt_signing_string`)
+## Layers
 
 ```
-deviceID + RECEIPTTYPE(upper) + CURRENCY(upper) + receiptGlobalNo
-  + receiptDate("YYYY-MM-DDTHH:mm:ss", LOCAL time, no offset)
-  + receiptTotal(integer cents)
-  + taxes(sorted by taxID ascending: [taxPercent("15.00" or "" if exempt)]
-      + taxAmount(cents) + salesAmountWithTax(cents), concatenated)
-  + previousReceiptHash(base64)   -- omitted (empty) for the first receipt
-                                      of the fiscal day
+zw_compliance/
+├── fdms/                 ZIMRA protocol, pure Python (no Frappe imports)
+├── fiscalisation/        Frappe service layer: ERPNext ⇄ fdms
+├── zimra_fiscalisation/  Frappe module: doctypes, reports, print formats, workspace
+├── zimbabwe_compliance/  Frappe module: shared masters (Zimra HSN Code); future pillars
+├── api/v1/               Remote JSON API for external clients
+└── templates/zimra/      Jinja for the §10 receipt, invoice and Z/X report views
 ```
 
-### Fiscal-day (CloseDay) signing string (`fiscal_day_signing_string`)
+### `fdms/`: the protocol
 
+A library that knows ZIMRA and nothing about ERPNext. It can be used by any
+Python program and is tested with plain `pytest`.
+
+| Module | Responsibility |
+|---|---|
+| `types.py` | Dataclasses and enums of the API (§5): receipts, counters, taxes, config, status |
+| `money.py` | `Decimal` arithmetic, half-even rounding, cents; proportional splitting by largest remainder |
+| `receipt.py` | Builds a receipt from neutral input: tax per group (RCPT026), line and payment checks. `validate_receipt` enforces locally every §8.2.1 rule that can be checked without FDMS. Fiscal counters (§6) |
+| `signing.py` | Canonical strings for the receipt (§13.2.1), the fiscal day (§13.3.1) and FDMS's countersignatures (§13.2.2, §13.3.2) |
+| `signer.py`, `csr.py` | P-256 key generation, ECDSA / RSA signing, CSR with CN `ZIMRA-<serial>-<deviceID>` (§12) |
+| `qr.py` | QR URL and the 16-character verification code (§11) |
+| `wire.py` | JSON in and out, using the field names of ZIMRA's published Swagger |
+| `client.py` | `FdmsClient`: endpoints, headers (`DeviceModelName`, both `DeviceModelVersion` spellings), 30 s timeout (§7.4), retry of idempotent calls only, ProblemDetails → `FdmsApiError` |
+| `verify.py` | Verifies FDMS's receipt and day signatures against its certificate chain |
+| `clock.py` | Learns the device-to-server clock offset from HTTP `Date` headers |
+| `errors.py` | The complete §8.2 / §8.2.1 / §5.4 error catalogue, with a plain-language fix for each code |
+
+The transport is injected (`Transport` protocol), so the client is tested
+without a network and the Frappe layer can plug in `requests` with mutual TLS.
+
+### `fiscalisation/`: ERPNext onto the protocol
+
+| Module | Responsibility |
+|---|---|
+| `validation.py` | `validate` and `before_submit` hooks: refuse, with a reason, any invoice ZIMRA would reject (currency, TIN, HS codes, discounts, credit-note rules), by building and checking the receipt before submit |
+| `builder.py` | ERPNext invoice → `ReceiptDraft`. Taxes come from the mapping of Item Tax Template / Taxes and Charges Template to ZIMRA tax, lines are reconciled to `grand_total`, plus payments, buyer and the credit/debit note reference |
+| `outbox.py` | `on_submit`: sign and store the receipt in the invoice's transaction |
+| `sync.py` | Background job that talks to FDMS |
+| `day.py` | Fiscal-day state: local opening, rollover, close requests, counter recomputation |
+| `device.py` | Device lifecycle: verify, register, configure, renew, ping; `connect()` builds an mTLS client |
+| `taxes.py` | Accounts, templates and mappings from ZIMRA's tax table |
+| `schedule.py` | Scheduler jobs |
+| `guards.py` | No cancel or delete of fiscalised invoices; fiscal fields cleared on copy |
+| `credentials.py` | Encrypted key storage; short-lived 0600 files for the TLS handshake |
+| `print_utils.py` | Jinja helpers for the print formats |
+| `api.py` | Desk actions (whitelisted, manager roles only) |
+| `setup/` | Custom fields, roles, settings defaults, HS code seed, uninstall guard |
+
+## The transactional outbox
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Cashier / API client
+    participant SI as Sales or POS Invoice
+    participant OB as outbox.fiscalise
+    participant DB as Database
+    participant Q as Sync job (per device)
+    participant Z as ZIMRA FDMS
+
+    U->>SI: Submit
+    rect rgba(120,160,255,0.12)
+    note over SI,DB: one database transaction
+    SI->>SI: before_submit: would ZIMRA accept this? (else refuse with the reason)
+    SI->>OB: on_submit
+    OB->>DB: SELECT … FOR UPDATE on the fiscal device
+    OB->>OB: fiscal day · counter+1 · globalNo+1 · date floor · hash chain · sign · QR
+    OB->>DB: INSERT Zimra Fiscal Receipt (Queued) + day counters + invoice fields
+    end
+    DB-->>U: committed: receipt printable now (QR + verification code)
+    DB-)Q: after commit: enqueue (deduplicated)
+    Q->>Z: submitReceipt (strictly in globalNo order)
+    Z-->>Q: receiptID + FDMS signature (verified)
+    Q->>DB: Submitted
 ```
-deviceID + fiscalDayNo + fiscalDayDate("YYYY-MM-DD")
-  + counters(sorted, zero-value counters excluded):
-      counterType(upper) + currency(upper)
-        + [taxPercent("15.00") if present]
-        + [moneyType(upper) if present]
-        + counterValue(cents)
+
+**Why sign locally, inside the transaction?** Everything ZIMRA needs to
+accept a receipt (number, counter, previous hash, signature) is derived from
+local data. If signing happened after the invoice committed, a crash in
+between would leave an invoice without a receipt. If the FDMS call happened
+before commit, a later rollback would leave ZIMRA with a receipt that has no
+invoice, and the number would be burned for good. Doing all of it in one
+transaction makes the invoice and its fiscal receipt one atomic fact. The row
+lock on the device serialises numbering across web workers and hosts.
+
+**Why a queue, even online?** The specification allows it (§9 req. 14:
+"otherwise receipt must be put to the queue"), and it gives one code path.
+After commit a job is enqueued immediately (deduplicated per device), so in
+online mode the receipt reaches ZIMRA within seconds. Offline, the same job
+drains the queue when the connection returns. The every-minute scheduler is
+the safety net.
+
+**Date floor.** A receipt's date is the server-corrected clock, but never
+earlier than or equal to the latest of:
+- the day's opening;
+- the previous receipt in the day;
+- the latest receipt of the device.
+
+ZIMRA flags same-second or back-dated receipts (RCPT030). The device-wide
+floor follows a live finding of the zimra-fdms SDK: once one receipt is
+future-dated, every later one must be dated after it.
+
+## The sync job
+
+`sync.sync_device` takes a file lock per device and is de-duplicated by job
+ID, so one runner works on a device at a time. Each pass, until nothing is
+left:
+
+```mermaid
+flowchart TD
+    start(["sync_device"]) --> open{"Earliest day not yet<br/>announced, previous days closed?"}
+    open -- yes --> cfg["getConfig → getStatus → openDay<br/>lost answer recovered from getStatus"]
+    open -- no --> sub
+    cfg --> sub
+    sub{"Next receipt in globalNo order"}
+    sub -- none, or its day not opened --> close
+    sub -- back-off not over --> close
+    sub -- send --> res{"FDMS answer"}
+    res -- accepted --> ok["Submitted · verify FDMS signature<br/>store colours"] --> sub
+    res -- network / 5xx / 429 --> retry["Retrying with back-off<br/>queue stops here"] --> close
+    res -- 400 / RCPT01-02 --> rej["Rejected · alert managers<br/>queue stops here"] --> close
+    close{"Close requested and every<br/>receipt Submitted, none Grey/Red?"}
+    close -- yes --> cd["recompute counters · cross-check getStatus<br/>sign day · closeDay"]
+    close -- no --> poll
+    cd --> poll{"Closing day?"}
+    poll -- yes --> st["getStatus → Closed (verify signature)<br/>or Close Failed (reason + fix)"]
+    poll -- no --> done
+    st --> done(["commit; repeat while progress"])
 ```
 
-Counters sort by a **fixed priority table**, not alphabetically:
+1. **Open.** For the earliest day not yet announced, and only when every earlier day is closed:
+   - getConfig, which refreshes taxpayer data, taxes and VAT status (§9 req. 2);
+   - getStatus;
+   - openDay with the device's own day number. A lost openDay answer is recovered from getStatus.
+2. **Submit.** Queued and Retrying receipts go one at a time in `receiptGlobalNo` order (§9 req. 13). The queue stops at the first failure, because skipping would break the chain. Re-sending is safe: FDMS answers a duplicate with the original receiptID (§4.7).
+3. **Close.** Once all of a day's receipts are Submitted and none is Grey or Red (§4.11), counters are recomputed from the signed payloads, compared with the incremental ones and with getStatus, the day is signed (§13.3.1) and closeDay is sent.
+4. **Poll.** getStatus until FiscalDayClosed (FDMS's day signature is verified) or a refusal (Close Failed, with the error code and fix).
 
+Each step commits, so progress survives a crash.
+
+## Failure handling
+
+The rule underneath everything: **the sequence is decided locally, once, at
+submit, and never again**. Connectivity only affects *when* ZIMRA hears about
+a receipt, never its number, hash or content.
+
+| What fails | What happens | Sequence impact |
+|---|---|---|
+| Invoice submit fails after signing (any error, any later hook) | The whole transaction rolls back, including the receipt and the counters | None: no number is used |
+| Two cashiers submit at once | The device row lock serialises them | None: consecutive numbers |
+| ZIMRA unreachable | Receipts are signed, printed and stay *Queued*. The head receipt goes *Retrying* with back-off (30 s doubling to 30 min) | None: later receipts wait behind it |
+| Connection returns | The next sale (or **Send Now**) lifts the back-off at once, and the queue drains in order. Without a sale, the every-minute scheduler resumes after the back-off | None |
+| ZIMRA stored a receipt but the answer was lost | Marked *Retrying*; re-sent with the same number and hash; ZIMRA returns the original receiptID (§4.7) | None: no duplicate |
+| openDay or closeDay answer lost | Recovered from getStatus | None |
+| ZIMRA 5xx or 429 | Same as unreachable | None |
+| ZIMRA refuses a receipt outright (400, RCPT01/02) | *Rejected*; queue stops; managers alerted | Held: later receipts are never sent ahead of it |
+| ZIMRA flags a receipt (Yellow/Grey/Red) | Stored on the receipt and surfaced in the workspace; Grey/Red block the close | None |
+| Worker crashes mid-run | Every step commits; the next run resumes | None |
+| Day reaches its maximum length while offline | The day is marked for closing; new sales go into the next day, announced once the previous day closes | None: global numbers continue |
+
+A connection that flaps (up, down with sales, up, down again with a lost
+answer, up) is covered end to end by
+`test_sequence_survives_a_flapping_connection`:
+
+```mermaid
+sequenceDiagram
+    participant D as Device (ERPNext)
+    participant Z as ZIMRA
+    Note over D,Z: Rn = receipt with global number n. Online.
+    D->>Z: R1 ✓
+    Note over D,Z: line down: sales continue
+    D--xZ: R2 (Retrying, back-off)
+    Note over D: R3, R4 signed and Queued behind R2
+    Note over D,Z: line back: sale R5 lifts the back-off
+    D->>Z: R2 ✓  R3 ✓  R4 ✓  R5 ✓
+    D->>Z: R6 (stored, answer lost)
+    Note over D,Z: line down again
+    D--xZ: R6 again (Retrying), R7 Queued
+    Note over D,Z: line back: sale R8
+    D->>Z: R6 ✓ (same receiptID: no duplicate)  R7 ✓  R8 ✓
+    D->>Z: closeDay ✓ (counters match)
 ```
-SaleByTax=1, SaleTaxByTax=2, CreditNoteByTax=3, CreditNoteTaxByTax=4,
-DebitNoteByTax=5, DebitNoteTaxByTax=6, BalanceByMoneyType=7
+
+## Fiscal days
+
+```mermaid
+stateDiagram-v2
+    [*] --> PendingOpen: first sale / scheduled opening
+    PendingOpen --> Opened: openDay acknowledged
+    PendingOpen --> CloseRequested: closed before ZIMRA acknowledged it
+    Opened --> CloseRequested: user · Close Day At · max length · VAT change
+    CloseRequested --> CloseInitiated: all receipts in, closeDay sent
+    CloseInitiated --> Closed: FDMS validated (Z report)
+    CloseInitiated --> CloseFailed: FDMS refused (reason stored)
+    CloseFailed --> CloseRequested: Retry Close
+    Closed --> [*]
 ```
-then by currency (ascending string), then taxID (ascending), then - for
-`BalanceByMoneyType` rows - by money-type **enum order** (also fixed, not
-alphabetical): `Cash=0, Card=1, MobileWallet=2, Coupon=3, Credit=4,
-BankTransfer=5, Other=6`.
 
-**`fiscalDayDate` is the date the day was *opened*, not "today".** FDMS
-signs CloseDay over that date, and `GetStatus` never reports it back - so
-`FiscalDevice.open_day()` persists `fdms_date(opened)` into the fiscal-day
-state and `close_day()` reuses it verbatim. Recomputing it as "now" at
-close time is exactly the `BadCertificateSignature` bug the reference SDK's
-error catalogue documents from live testing.
+| Status | Meaning |
+|---|---|
+| Pending Open | Created locally (first sale, or scheduled opening); openDay not yet acknowledged. Receipts may already be issued: the opening message may be delayed (§9 req. 10) and receipts are sent only after it (req. 11) |
+| Opened | Acknowledged by ZIMRA |
+| Close Requested | By a user, the schedule, the maximum day length, or a VAT status change (§9 req. 4, 9) |
+| Close Initiated | closeDay accepted; ZIMRA validates asynchronously |
+| Close Failed | ZIMRA refused; reason stored; can be retried |
+| Closed | Z report available; FDMS day signature stored |
 
-### Hash chain
+When the current day is closing or near its maximum length, the next receipt
+goes into a new Pending Open day. ZIMRA allows one open day per device, so
+that day is announced as soon as the previous close completes.
 
-`previous_receipt_hash` on the *next* receipt is the **`hash`** field of the
-previous receipt's `SignatureData` (base64 SHA-256 of its canonical
-string) - **not** the ECDSA `signature` field. Mixing these up produces a
-chain FDMS accepts syntactically but which doesn't verify against the
-receipt it claims to follow.
+## Data model
 
-## 4. Money: integer cents, always
+| Doctype | Role |
+|---|---|
+| Zimra Fiscal Device | One per ZIMRA device: identity, lifecycle status, taxpayer and config snapshot, certificate (permlevel 1), key (encrypted, permlevel 1), runtime state. Row-locked while signing |
+| Zimra Fiscal Day | One per device and day number (unique): status, counters, last hash, signatures, operation IDs |
+| Zimra Fiscal Receipt | The outbox and the audit record. Unique per (device, globalNo), per source document, and per invoice number. Holds the exact signed payload, the seller snapshot used for printing, and FDMS's answer. Immutable after insert; never deletable; read-only for every role |
+| Zimra Tax Mapping | ZIMRA tax ↔ accounts and templates, per company |
+| Zimra Settings | Global: currencies, money types, automation, notifications |
+| Zimra HSN Code | ZIMRA's HS list (4 or 8 digits usable on receipts) |
 
-`fdms/money.py` represents every amount as integer cents internally.
-`amount_to_cents()` accepts a `Money`, or a whole number of major units - a
-fractional `float` is a **hard error**, never silently rounded, because
-`11.5` and `11.499999...` are the same IEEE-754 float and FDMS signs over
-the cents. Sub-unit amounts must come in as an exact decimal string via
-`money.cents("11.50")`. `zimra/receipt_builder.py` follows this rule too:
-ERPNext rates are formatted to a fixed 2-decimal string and parsed with
-`cents()` rather than passed through as raw floats.
+Custom fields on Sales Invoice and POS Invoice (section *ZIMRA
+Fiscalisation*) mirror the receipt for list views and printing. They are
+read-only and `no_copy`, and are cleared on insert of any copy. Customer gets
+`zimra_vat_number` and `zimra_trade_name`; the TIN is ERPNext's `tax_id`.
+Item and Item Group get `zimra_hs_code`. All fields are created in code with
+`module = "ZIMRA Fiscalisation"`, so uninstall removes them.
 
-Per-line tax is rounded **independently per receipt line**, then
-accumulated into the tax-group total - not summed first and rounded once.
-This is a one-cent-level detail that `fdms/tests/test_vectors.py`'s tax
-vectors pin exactly.
+## Security
 
-## 5. The `FiscalDevice` state machine
+- **Device key.** Generated on the server, stored in a Password field (encrypted with the site's key) at permlevel 1. It is written to a 0600 temporary file under `sites/<site>/private/zimra/` only for the TLS handshake, and deleted straight after.
+- **Roles.**
+  - *ZIMRA Manager* runs devices and days.
+  - *ZIMRA User* reads receipts, days and reports.
+  - Fiscal receipts and days are read-only for all roles; only code writes them.
+  - Desk actions check roles with `frappe.only_for`.
+  - The remote API acts as the calling user, so ERPNext's own permissions apply.
+- **FDMS authenticity.** Receipt and day countersignatures are verified against ZIMRA's certificate chain, chosen by thumbprint.
 
-`fdms/device.py` owns three pieces of state, always accessed together:
+## Extending to new pillars
 
-- `FiscalDayState` - `fiscal_day_no`, `fiscal_day_date`, `receipt_counter`
-  (resets to 0 per day), `receipt_global_no` (never resets), the hash chain
-  (`previous_receipt_hash`), running `counters`, and any `red_errors`
-  encountered this day (which block `close_day()` unless `force=True`).
-- A **pending-submit marker**, written to `Storage` *before* every
-  `SubmitReceipt`/`OpenDay`/`CloseDay`/`IssueCertificate` call (these are
-  the only FDMS calls that never get automatic HTTP retries - see below)
-  and cleared only once the outcome is known. If a process dies mid-call,
-  the marker survives; `reconcile()` (called at the top of every
-  `ZimraConnector` operation) asks `GetStatus` whether the receipt actually
-  arrived, resubmits the identical signed receipt if not, and never issues
-  a duplicate or skips a number.
-- The **durable state store** itself (`Storage` protocol - `zimra/storage.py`
-  in this app), holding exactly three keys: `day-state`, `pending-submit`,
-  `last-receipt-global-no`.
+Payroll, NSSA and ZIMDEF follow the same shape:
+- a Frappe module for doctypes, reports and workspace;
+- a service package for hooks and jobs;
+- where a protocol or statutory computation is involved, a pure library tested without Frappe.
 
-`open_day()`'s `receiptGlobalNo` is `max(GetStatus.lastReceiptGlobalNo,
-locally-persisted-highest-issued, any explicit override)` - **never** the
-server value alone. This is the concrete guard against RCPT012
-(non-sequential global number): a stale or lagging `GetStatus` response can
-never cause a number to be reused.
-
-### Why not just retry on failure?
-
-`FdmsClient` (`fdms/transport.py`) only auto-retries **idempotent** calls
-(`GET`, and `Ping`) with jittered exponential backoff. `SubmitReceipt`,
-`OpenDay`, `CloseDay` and `IssueCertificate` get exactly one attempt at the
-transport layer - retrying a non-idempotent call blindly risks a duplicate
-receipt if the first attempt actually succeeded and only the *response* was
-lost. Reliability for those calls comes entirely from the pending-marker +
-`reconcile()` pattern above, which distinguishes "FDMS never saw this" from
-"FDMS has it, I just don't know the answer" before doing anything else.
-
-## 6. Offline queue (`fdms/queue.py`, `fdms/journal.py`)
-
-Covers ZIMRA's documented 72-hour offline grace window. A receipt is
-**signed at sale time** (numbered, hash-chained, ECDSA-signed) regardless
-of connectivity, then either submitted immediately or appended to a durable
-append-only journal. Two orderings matter:
-
-- **`journal.append()` happens before `device.apply_prepared()`.** If the
-  process dies in between, the journal has an entry whose `stateAfter` is
-  ahead of the device's persisted state; the next load detects that gap and
-  calls `restore_state()` to catch up - so a receipt number is never reused
-  or silently skipped.
-- **`flush()` is strict FIFO and stops at the first failure.** The hash
-  chain requires receipts to reach FDMS in the order they were signed;
-  there is no reordering or skip-ahead.
-
-In this app, `zimra/journal.py`'s `FrappeFileJournal` backs this with a
-newline-delimited-JSON append-only file plus a separately, atomically
-written commit-cursor file - append is O(1) and the journal file itself is
-never rewritten.
-
-## 7. Concurrency: the device lock
-
-FDMS enforces receipt numbers strictly one-at-a-time per device. A Frappe
-site can run several gunicorn/RQ workers, so "read the counter, increment
-it, submit" is not atomic across processes unless something serialises it.
-`zimra/lock.py` wraps every counter-issuing `ZimraConnector` operation
-(`fiscalise`, `open_day`, `close_day`) in an `flock` on a file under the
-same private state directory the durable storage uses - simple, needs no
-extra service, and is sufficient for the deployment shape here (one ZIMRA
-device per site, one host's worker processes sharing a filesystem).
-
-## 8. QR verification data
-
-`fdms/qr.py`: `{qrUrl}/{deviceId:010d}{ddMMyyyy}{receiptGlobalNo:010d}{md5[:16 hex]}`.
-The MD5 is computed over the **decoded raw bytes of the ECDSA signature**
-(the `signature` field, not the `hash` field) - the reverse of which field
-feeds the hash chain (§3). `receiptDate` here uses day-month-year order,
-unlike the `YYYY-MM-DD` used in signing strings - two different date
-formats in the same protocol, both load-bearing.
-
-## 9. Errors and support codes
-
-`fdms/errors.py` carries a small catalogue (`ERROR_CATALOGUE`) of known FDMS
-codes with colour (Red/Yellow/Grey), cause and fix, transcribed from the
-reference SDK's own catalogue (which flags which entries were actually
-observed against ZIMRA's live test environment vs. sourced from
-documentation only). `Red` validation errors block `close_day()` (device
-cannot close a day holding one - only ZIMRA can); `Yellow` are warnings;
-`Grey` are request-level rejections. `explain_validation_error()` maps a raw
-FDMS `ValidationError` onto this catalogue and is what populates the `Zimra
-Validation Error` child doctype rows on a Receipt Log / Fiscal Day.
-
-## 10. Clock correction
-
-FDMS's `Date` response header resolves to whole seconds and represents when
-the response was *sent* - roughly half a round trip before it's received.
-`fdms/clock.py`'s `ServerCorrectedClock` folds every response's date into an
-exponential moving average offset (`estimate = serverDate + rtt/2 -
-localNow`, weight capped at 1/8 once warmed up past 8 samples), so a
-terminal with a drifted local clock still produces `receiptDate` values FDMS
-accepts (avoiding RCPT031, "receipt date ahead of server time").
-
-## 11. ERPNext → ReceiptInput mapping (`zimra/receipt_builder.py`)
-
-The one place ERPNext's data model is translated into FDMS's:
-
-- **Tax**: each line's `Item Tax Template` (falling back to the document's
-  `Taxes and Charges Template`) is looked up in `Zimra Tax Mapping` for a
-  ZIMRA `taxID`/`taxPercent`/`taxCode`. Missing mappings are a hard error
-  before any network call.
-- **Line price**: receipts are submitted tax-inclusive
-  (`receiptLinesTaxInclusive: true`). ERPNext's `item.base_rate` is net of
-  tax, so the line price sent to FDMS is grossed up by the mapped tax rate
-  (`net_rate * (1 + tax_percent/100)`). This assumes one tax rate per line,
-  which holds for ZIMRA's standard VAT categories.
-- **HS codes**: hierarchical Item → Item Group lookup via `Zimra HSN Code`,
-  mandatory for VAT-registered operators (8 digits for 0%/exempt lines, 4 or
-  8 for standard rates - RCPT047/RCPT048).
-- **Payments**: `Sales Invoice Payment`/POS Invoice payments map through
-  `Zimra Payment Mode Mapping`; an invoice with no payment rows (on
-  account) is submitted as a single `Credit` payment for the full total,
-  since FDMS requires `receiptPayments` to sum to `receiptTotal`.
-- **Returns**: `is_return` invoices become `CreditNote` (negative grand
-  total) or `DebitNote`, with a `creditDebitNote` reference built from the
-  original invoice's stored ZIMRA identifiers, and RCPT033's 12-month
-  return window enforced client-side before submission.
-- **POS → Sales Invoice inheritance**: a Sales Invoice consolidated from an
-  already-fiscalised POS Invoice inherits that receipt's identity
-  (`doc_events.py`) instead of being fiscalised a second time - ZIMRA sees
-  one receipt per sale, not one per ERPNext document.
-
-## 12. Testing strategy
-
-- **`fdms/tests/test_vectors.py`** - conformance vectors published by the
-  reference SDK, replayed against this port. Canonical strings and hashes
-  are compared byte-for-byte; ECDSA signatures are verified against the
-  vectors' public key rather than compared (ECDSA signing is randomised).
-  Run with plain `pytest`, no Frappe required.
-- **`fdms/tests/test_device.py`, `test_queue.py`** - state-machine and
-  crash-safety behaviour (pending markers, `reconcile()`, offline
-  journalling) against `fdms/tests/fakes.py`'s in-memory fake FDMS server -
-  these fakes do *not* replicate FDMS's own validation rules, only enough
-  "well-behaved FDMS" behaviour to exercise the bookkeeping.
-- **The zimra-fdms simulator** (`npx zimra-fdms-simulator`) - real mutual
-  TLS, and replays the actual validation/error behaviour observed against
-  ZIMRA's live test environment (RCPT010-031, the asynchronous CloseDay
-  settling to `FiscalDayClosed` or bouncing with `BadCertificateSignature`,
-  dropped connections, skewed clocks). This is the right tool for
-  Frappe-level integration tests that exercise a full register → open day →
-  submit → close day cycle without needing real ZIMRA test credentials, and
-  is intended to be wired into this app's `bench run-tests` suite - see the
-  README's Development section for how to point `Zimra Settings` at it.
+Shared masters belong in `zimbabwe_compliance`.

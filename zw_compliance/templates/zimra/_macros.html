@@ -1,0 +1,7 @@
+{#- Shared helpers for the ZIMRA fiscal print formats (spec v7.2 §10). -#}
+{%- macro money(value) -%}{{ "{:,.2f}".format(value or 0) }}{%- endmacro -%}
+{%- macro qty(value) -%}{{ "{:f}".format(value) }}{%- endmacro -%}
+{%- macro fdate(value) -%}{{ value.strftime("%d/%m/%y %H:%M") if value else "" }}{%- endmacro -%}
+{%- macro tax_label(t) -%}
+	{%- if t.percent is none -%}{{ _("VAT") }} ({{ _("Exempt") }}){%- else -%}{{ _("VAT") }} ({{ "{:g}".format(t.percent) }}%){%- endif -%}
+{%- endmacro -%}

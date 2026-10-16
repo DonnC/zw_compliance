@@ -1,0 +1,6 @@
+{%- set z = zimra_fiscal_receipt(doc) -%}
+{% if z %}
+{% include "zw_compliance/templates/zimra/invoice_a4.html" %}
+{% else %}
+<p style="text-align:center">{{ _("This document has not been fiscalised with ZIMRA.") }}</p>
+{% endif %}

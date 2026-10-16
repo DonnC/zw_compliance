@@ -1,24 +1,31 @@
-"""Wire types for FDMS Device/v1 and Public/v1, ported from src/core/types.ts.
+"""Data model for the ZIMRA Fiscal Device Gateway API (spec v7.2).
 
-Field names are JSON-wire-exact (camelCase) - these dataclasses are (de)
-serialised straight to/from the FDMS JSON payloads, so do not rename fields
-to snake_case here even though the rest of this codebase is snake_case.
+Python-side names are snake_case; :mod:`zw_compliance.fdms.wire` is the single
+place that maps them to the camelCase JSON the gateway expects. All amounts are
+:class:`decimal.Decimal` (see :mod:`zw_compliance.fdms.money`). Datetimes are
+naive local wall-clock values: the spec transmits "local time without time
+zone information" everywhere.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Literal
 
 FDMS_BASE_URLS = {
-	"test": "https://fdmsapitest.zimra.co.zw",
+	"test": "https://fdmsapitest.zimra.co.zw",  # spec §7.2
 	"production": "https://fdmsapi.zimra.co.zw",
 }
 
-ReceiptType = Literal["FiscalInvoice", "CreditNote", "DebitNote"]
-ReceiptLineType = Literal["Sale", "Discount"]
-MoneyType = Literal["Cash", "Card", "MobileWallet", "Coupon", "Credit", "BankTransfer", "Other"]
-FiscalCounterType = Literal[
+# Enums, spec §5.4. Order matters where noted: it is the "enum order" used for
+# sorting in the fiscal-day signature (§13.3.1).
+RECEIPT_TYPES = ("FiscalInvoice", "CreditNote", "DebitNote")  # §5.4.6
+RECEIPT_LINE_TYPES = ("Sale", "Discount")  # §5.4.7
+RECEIPT_PRINT_FORMS = ("Receipt48", "InvoiceA4")  # §5.4.8
+MONEY_TYPES = ("Cash", "Card", "MobileWallet", "Coupon", "Credit", "BankTransfer", "Other")  # §5.4.5
+FISCAL_COUNTER_TYPES = (  # §5.4.4
 	"SaleByTax",
 	"SaleTaxByTax",
 	"CreditNoteByTax",
@@ -26,17 +33,22 @@ FiscalCounterType = Literal[
 	"DebitNoteByTax",
 	"DebitNoteTaxByTax",
 	"BalanceByMoneyType",
-	"PayoutByTax",
-	"PayoutTaxByTax",
-]
-FiscalDayStatus = Literal[
-	"FiscalDayClosed", "FiscalDayOpened", "FiscalDayCloseInitiated", "FiscalDayCloseFailed"
-]
-DeviceOperatingMode = Literal["Online", "Offline"]
-EcdsaSignatureFormat = Literal["p1363", "der"]
+)
+FISCAL_DAY_STATUSES = (  # §5.4.2
+	"FiscalDayClosed",
+	"FiscalDayOpened",
+	"FiscalDayCloseInitiated",
+	"FiscalDayCloseFailed",
+)
+VALIDATION_COLOURS = ("Grey", "Yellow", "Red")  # §8.2.1
+
+ReceiptType = Literal["FiscalInvoice", "CreditNote", "DebitNote"]
+ReceiptLineType = Literal["Sale", "Discount"]
+ReceiptPrintForm = Literal["Receipt48", "InvoiceA4"]
+MoneyType = Literal["Cash", "Card", "MobileWallet", "Coupon", "Credit", "BankTransfer", "Other"]
 
 
-@dataclass
+@dataclass(frozen=True)
 class DeviceIdentity:
 	device_id: int
 	serial_number: str
@@ -45,240 +57,216 @@ class DeviceIdentity:
 
 
 @dataclass
-class TaxDefinition:
-	tax_id: int
-	tax_name: str
-	tax_percent: Optional[float]
-	valid_from: str
-	valid_till: Optional[str] = None
+class Address:  # §5.1
+	province: str | None = None
+	city: str | None = None
+	street: str | None = None
+	house_no: str | None = None
+	district: str | None = None
 
 
 @dataclass
-class AddressDto:
-	province: Optional[str] = None
-	city: Optional[str] = None
-	street: Optional[str] = None
-	house_no: Optional[str] = None
+class Contacts:  # §5.2
+	phone_no: str | None = None
+	email: str | None = None
 
 
 @dataclass
-class GetConfigResponse:
-	operation_id: str
-	tax_payer_name: str
-	tax_payer_tin: str
-	vat_number: Optional[str]
-	device_serial_no: str
-	device_branch_name: str
-	device_branch_address: Optional[dict]
-	device_branch_contacts: Optional[dict]
-	device_operating_mode: DeviceOperatingMode
-	tax_payer_day_max_hrs: int
-	applicable_taxes: list[TaxDefinition]
-	certificate_valid_till: str
-	qr_url: str
-	taxpayer_day_end_notification_hrs: Optional[int] = None
+class Buyer:  # §4.7 Buyer
+	register_name: str
+	tin: str
+	trade_name: str | None = None
+	vat_number: str | None = None
+	address: Address | None = None
+	contacts: Contacts | None = None
 
 
 @dataclass
-class SignatureData:
-	hash: str
-	signature: str
+class CreditDebitNote:  # §4.7 CreditDebitNote
+	receipt_id: int | None = None
+	device_id: int | None = None
+	receipt_global_no: int | None = None
+	fiscal_day_no: int | None = None
 
 
 @dataclass
-class FiscalDayCounter:
-	fiscal_counter_type: FiscalCounterType
-	fiscal_counter_currency: str
-	fiscal_counter_value: float
-	fiscal_counter_tax_percent: Optional[float] = None
-	fiscal_counter_tax_id: Optional[int] = None
-	fiscal_counter_money_type: Optional[MoneyType] = None
+class UserInfo:  # Swagger ReceiptDto.userInfo
+	username: str
+	full_name: str
 
 
 @dataclass
-class GetStatusResponse:
-	operation_id: str
-	fiscal_day_status: FiscalDayStatus
-	fiscal_day_reconciliation_mode: Optional[str] = None
-	fiscal_day_server_signature: Optional[SignatureData] = None
-	fiscal_day_closed: Optional[str] = None
-	fiscal_day_counter: Optional[int] = None
-	last_receipt_global_no: Optional[int] = None
-	last_fiscal_day_no: Optional[int] = None
-	fiscal_day_closing_error_code: Optional[str] = None
-	fiscal_day_document_quantities: Optional[dict] = None
+class SignatureData:  # §5.3
+	hash: str  # base64 SHA-256
+	signature: str  # base64 signature
 
 
 @dataclass
-class OpenDayResponse:
-	operation_id: str
-	fiscal_day_no: int
+class LineInput:
+	"""One receipt line before numbering and tax aggregation.
 
+	``total`` is tax inclusive and already carries the receipt's sign (negative
+	for credit-note sale lines, negative for invoice discount lines - RCPT022).
+	``quantity`` is always positive (RCPT023).
+	"""
 
-@dataclass
-class CloseDayResponse:
-	operation_id: str
-
-
-@dataclass
-class ReceiptLine:
-	receipt_line_type: ReceiptLineType
-	receipt_line_no: int
-	receipt_line_name: str
-	receipt_line_quantity: float
-	receipt_line_total: float
-	tax_id: int
-	receipt_line_hs_code: Optional[str] = None
-	receipt_line_price: Optional[float] = None
-	tax_code: Optional[str] = None
-	tax_percent: Optional[float] = None
-
-
-@dataclass
-class ReceiptTax:
-	tax_id: int
-	tax_amount: float
-	sales_amount_with_tax: float
-	tax_code: Optional[str] = None
-	tax_percent: Optional[float] = None
-
-
-@dataclass
-class Payment:
-	money_type_code: MoneyType
-	payment_amount: float
-
-
-@dataclass
-class CreditDebitNote:
-	receipt_id: Optional[int] = None
-	device_id: Optional[int] = None
-	receipt_global_no: Optional[int] = None
-	fiscal_day_no: Optional[int] = None
-
-
-@dataclass
-class BuyerData:
-	buyer_register_name: Optional[str] = None
-	buyer_trade_name: Optional[str] = None
-	vat_number: Optional[str] = None
-	buyer_tin: Optional[str] = None
-	buyer_contacts: Optional[dict] = None
-	buyer_address: Optional[dict] = None
-
-
-@dataclass
-class Receipt:
-	receipt_type: ReceiptType
-	receipt_currency: str
-	receipt_counter: int
-	receipt_global_no: int
-	invoice_no: str
-	receipt_date: str
-	receipt_lines_tax_inclusive: bool
-	receipt_lines: list[ReceiptLine]
-	receipt_taxes: list[ReceiptTax]
-	receipt_payments: list[Payment]
-	receipt_total: float
-	receipt_device_signature: Optional[SignatureData] = None
-	buyer_data: Optional[BuyerData] = None
-	receipt_notes: Optional[str] = None
-	credit_debit_note: Optional[CreditDebitNote] = None
-	receipt_print_form: Optional[str] = None
-
-
-@dataclass
-class ValidationError:
-	validation_error_code: Optional[str] = None
-	validation_error_color: Optional[str] = None
-	validation_error_description: Optional[str] = None
-
-
-@dataclass
-class SubmitReceiptResponse:
-	operation_id: str
-	receipt_id: int
-	server_date: str
-	receipt_server_signature: Optional[SignatureData] = None
-	validation_errors: list[ValidationError] = field(default_factory=list)
-
-
-@dataclass
-class PingResponse:
-	operation_id: str
-	reporting_frequency: Optional[int] = None
-
-
-@dataclass
-class ApiProblemDetails:
-	type: Optional[str] = None
-	title: Optional[str] = None
-	status: Optional[int] = None
-	detail: Optional[str] = None
-	error_code: Optional[str] = None
-	extra: dict = field(default_factory=dict)
-
-
-@dataclass
-class ReceiptLineInput:
 	name: str
-	price: object  # int major units, float (must be whole) or fdms.money.Money
-	quantity: float
+	quantity: Decimal
+	total: Decimal
 	tax_id: int
-	tax_percent: Optional[float] = None
-	tax_code: Optional[str] = None
-	hs_code: Optional[str] = None
+	tax_percent: Decimal | None  # None = exempt (field omitted on the wire)
+	hs_code: str | None = None
+	line_type: ReceiptLineType = "Sale"
+	tax_code: str | None = None
 
 
 @dataclass
 class PaymentInput:
 	money_type: MoneyType
-	amount: object  # int major units, float (must be whole) or fdms.money.Money
+	amount: Decimal  # signed like the receipt total (RCPT028)
 
 
 @dataclass
-class ReceiptInput:
+class ReceiptDraft:
+	"""Everything needed to number, sign and submit a receipt."""
+
+	receipt_type: ReceiptType
 	currency: str
 	invoice_no: str
-	lines: list[ReceiptLineInput]
+	lines: list[LineInput]
 	payments: list[PaymentInput]
-	receipt_type: ReceiptType = "FiscalInvoice"
+	print_form: ReceiptPrintForm = "Receipt48"
+	buyer: Buyer | None = None
+	notes: str | None = None
+	credit_debit_note: CreditDebitNote | None = None
+	user: UserInfo | None = None
+
+
+@dataclass
+class ReceiptLine:
+	line_type: ReceiptLineType
+	line_no: int
+	name: str
+	quantity: Decimal
+	total: Decimal
+	tax_id: int
+	tax_percent: Decimal | None
+	price: Decimal | None = None
+	hs_code: str | None = None
+	tax_code: str | None = None
+
+
+@dataclass
+class ReceiptTax:
+	tax_id: int
+	tax_percent: Decimal | None
+	tax_amount: Decimal
+	sales_amount_with_tax: Decimal
+	tax_code: str | None = None
+
+
+@dataclass
+class Payment:
+	money_type: MoneyType
+	amount: Decimal
+
+
+@dataclass
+class Receipt:
+	receipt_type: ReceiptType
+	currency: str
+	counter: int
+	global_no: int
+	invoice_no: str
+	date: datetime
+	lines: list[ReceiptLine]
+	taxes: list[ReceiptTax]
+	payments: list[Payment]
+	total: Decimal
+	print_form: ReceiptPrintForm = "Receipt48"
 	lines_tax_inclusive: bool = True
-	receipt_date: Optional[object] = None  # datetime, explicit dates trusted verbatim
-	notes: Optional[str] = None
-	buyer: Optional[BuyerData] = None
-	credit_debit_note: Optional[CreditDebitNote] = None
+	buyer: Buyer | None = None
+	notes: str | None = None
+	credit_debit_note: CreditDebitNote | None = None
+	user: UserInfo | None = None
+	device_signature: SignatureData | None = None
 
 
 @dataclass
-class RedValidationError:
-	receipt_global_no: int
-	receipt_counter: int
+class FiscalCounter:  # §4.11 FiscalDayCounter
+	counter_type: str
+	currency: str
+	value: Decimal
+	tax_id: int | None = None
+	tax_percent: Decimal | None = None
+	money_type: MoneyType | None = None
+
+	def key(self) -> tuple:
+		return (self.counter_type, self.currency, self.tax_id, self.tax_percent, self.money_type)
+
+
+@dataclass
+class Tax:  # §4.4 Tax
+	tax_id: int
+	tax_name: str
+	tax_percent: Decimal | None
+	valid_from: date | None
+	valid_till: date | None = None
+
+
+@dataclass
+class TaxpayerInfo:  # §4.1 output
+	operation_id: str
+	taxpayer_name: str
+	taxpayer_tin: str
+	vat_number: str | None
+	branch_name: str
+	branch_address: Address | None
+	branch_contacts: Contacts | None
+
+
+@dataclass
+class DeviceConfig:  # §4.4 output
+	operation_id: str
+	taxpayer_name: str
+	taxpayer_tin: str
+	vat_number: str | None
+	device_serial_no: str
+	branch_name: str
+	branch_address: Address | None
+	branch_contacts: Contacts | None
+	operating_mode: str
+	day_max_hours: int
+	day_end_notification_hours: int
+	applicable_taxes: list[Tax]
+	certificate_valid_till: date | None
+	qr_url: str
+
+
+@dataclass
+class ValidationError:  # Swagger ValidationError
 	code: str
-	description: Optional[str] = None
+	colour: str
+	description: str
 
 
 @dataclass
-class FiscalDayState:
-	fiscal_day_no: int
-	fiscal_day_date: str
-	receipt_counter: int
-	receipt_global_no: int
-	counters: list[FiscalDayCounter] = field(default_factory=list)
-	previous_receipt_hash: Optional[str] = None
-	previous_receipt_date: Optional[str] = None
-	red_errors: list[RedValidationError] = field(default_factory=list)
+class DayStatus:  # §4.5 output
+	operation_id: str
+	fiscal_day_status: str
+	reconciliation_mode: str | None = None
+	server_signature: dict | None = None
+	fiscal_day_closed: datetime | None = None
+	closing_error_code: str | None = None
+	last_receipt_global_no: int | None = None
+	last_fiscal_day_no: int | None = None
+	counters: list[FiscalCounter] = field(default_factory=list)
 
 
 @dataclass
-class PreparedReceipt:
-	receipt: Receipt
-	date: str
-	state_after: FiscalDayState
-
-
-@dataclass
-class SubmittedReceipt:
-	receipt: Receipt
-	response: Optional[SubmitReceiptResponse]
-	qr_data: Optional[str] = None
+class SubmitReceiptResult:  # §4.7 output
+	operation_id: str
+	receipt_id: int
+	server_date: datetime
+	server_signature: dict
+	validation_errors: list[ValidationError] = field(default_factory=list)

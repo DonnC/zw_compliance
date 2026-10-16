@@ -1,52 +1,59 @@
+from decimal import Decimal as D
+
 import pytest
 
-from zw_compliance.fdms.money import (
-	Money,
-	MoneyError,
-	amount_to_cents,
-	cents,
-	cents_to_amount,
-	format_cents,
-	money_from_json_number,
+from zw_compliance.fdms.money import MoneyError, q2, split_proportionally, to_cents, to_decimal
+
+
+@pytest.mark.parametrize(
+	"value,expected",
+	[
+		(0.1, D("0.1")),
+		(115, D("115")),
+		("11.50", D("11.50")),
+		(D("2.5"), D("2.5")),
+		(21474836.47, D("21474836.47")),
+	],
 )
+def test_to_decimal_is_exact(value, expected):
+	assert to_decimal(value) == expected
 
 
-def test_cents_parses_exact_decimals():
-	assert cents("11.50").cents == 1150
-	assert cents("2.5").cents == 250
-	assert cents("-2").cents == -200
-	assert cents("0.01").cents == 1
-
-
-def test_cents_rejects_garbage():
+@pytest.mark.parametrize("bad", [True, None, "abc", float("inf"), float("nan"), [1]])
+def test_to_decimal_rejects(bad):
 	with pytest.raises(MoneyError):
-		cents("11.5.0")
+		to_decimal(bad)
+
+
+def test_q2_is_bankers_rounding():
+	assert q2(D("0.125")) == D("0.12")
+	assert q2(D("0.135")) == D("0.14")
+	assert q2(D("-0.125")) == D("-0.12")
+
+
+def test_to_cents_refuses_sub_cent_amounts():
+	assert to_cents(D("-12.34")) == -1234
+	assert to_cents(D("0.05")) == 5
 	with pytest.raises(MoneyError):
-		cents("abc")
+		to_cents(D("1.005"))
 
 
-def test_amount_to_cents_whole_number_ok():
-	assert amount_to_cents(115, "price") == 11500
-	assert amount_to_cents(Money(1150), "price") == 1150
+@pytest.mark.parametrize(
+	"total,weights",
+	[
+		("100.00", ["1", "1", "1"]),
+		("0.01", ["3", "1"]),
+		("-50.00", ["-30", "-20", "-0.01"]),
+		("10.00", ["0", "0"]),
+		("33.33", ["10", "20", "3.33"]),
+	],
+)
+def test_split_proportionally_sums_exactly(total, weights):
+	parts = split_proportionally(D(total), [D(w) for w in weights])
+	assert sum(parts) == D(total)
+	assert len(parts) == len(weights)
+	assert all(p.as_tuple().exponent >= -2 for p in parts)
 
 
-def test_amount_to_cents_rejects_fractional_float():
-	with pytest.raises(MoneyError):
-		amount_to_cents(11.5, "price")
-
-
-def test_cents_to_amount_round_trip():
-	assert cents_to_amount(11500) == 115
-	assert cents_to_amount(11550) == 115.5
-
-
-def test_format_cents():
-	assert format_cents(1150) == "11.50"
-	assert format_cents(-150) == "-1.50"
-
-
-def test_money_from_json_number():
-	assert money_from_json_number(2, "amount").cents == 200
-	assert money_from_json_number(2.5, "amount").cents == 250
-	with pytest.raises(MoneyError):
-		money_from_json_number(2.567, "amount")
+def test_split_proportionally_keeps_sign():
+	assert split_proportionally(D("-0.03"), [D("1"), D("1"), D("1")]) == [D("-0.01")] * 3
