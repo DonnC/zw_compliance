@@ -1,0 +1,19 @@
+{
+ "creation": "2026-10-16 09:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "filters_json": "{}",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "ZIMRA Certificate Days Left",
+ "method": "zw_compliance.fiscalisation.dashboard.certificate_days_left",
+ "modified": "2026-10-16 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "ZIMRA Certificate Days Left",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Custom"
+}

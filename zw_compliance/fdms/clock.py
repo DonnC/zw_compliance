@@ -1,46 +1,35 @@
-"""Server-corrected clock, ported from src/core/clock.ts.
+"""Server-corrected clock.
 
-FDMS's HTTP Date header resolves to whole seconds and represents the moment
-the response was sent - roughly half a round trip before it's received - so
-`learn()` estimates the offset as serverDate + rtt/2 - localNowAtLearnTime,
-and folds it in with a decaying exponential moving average once the sample
-count warms up past a weight of 1/8.
+Receipt dates must not be in the future relative to FDMS (RCPT031, Yellow)
+and must always increase (RCPT030, Red). A host whose clock drifts would
+produce flagged receipts, so the device learns FDMS's clock from the HTTP
+``Date`` header of every response and stamps receipts with corrected time.
+
+The ``Date`` header has whole-second resolution and marks when the response
+was *sent*, about half a round trip before it was received, hence
+``estimate = server + rtt/2 - local_now``. Estimates are blended with an
+exponential moving average whose weight settles at 1/8.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Protocol
+
+MAX_WEIGHT_SAMPLES = 8
 
 
-class Clock(Protocol):
-	def now(self) -> datetime: ...
+def learn_offset(
+	previous_offset_ms: float, samples: int, server_time: datetime, round_trip_ms: float, local_now: datetime
+) -> tuple[float, int]:
+	"""Return the updated ``(offset_ms, samples)`` after one observation."""
+	estimate = (server_time - local_now).total_seconds() * 1000 + round_trip_ms / 2
+	samples += 1
+	if samples == 1:
+		return estimate, samples
+	return previous_offset_ms + (estimate - previous_offset_ms) / min(samples, MAX_WEIGHT_SAMPLES), samples
 
 
-class SystemClock:
-	def now(self) -> datetime:
-		return datetime.now()
-
-
-class ServerCorrectedClock:
-	def __init__(self, base: Clock | None = None):
-		self.base: Clock = base or SystemClock()
-		self.offset_ms: float = 0.0
-		self.samples: int = 0
-
-	def learn(self, server_date: datetime, round_trip_ms: float = 0) -> None:
-		local_now_ms = self.base.now().timestamp() * 1000
-		server_ms = server_date.timestamp() * 1000
-		estimate = server_ms + round_trip_ms / 2 - local_now_ms
-		self.samples += 1
-		if self.samples == 1:
-			self.offset_ms = estimate
-		else:
-			self.offset_ms += (estimate - self.offset_ms) / min(self.samples, 8)
-
-	def now(self) -> datetime:
-		return self.base.now() + timedelta(milliseconds=self.offset_ms)
-
-	@property
-	def confidence(self) -> int:
-		return self.samples
+def corrected_now(offset_ms: float, local_now: datetime | None = None) -> datetime:
+	"""Local wall-clock time corrected to FDMS's clock, to whole seconds."""
+	now = (local_now or datetime.now()) + timedelta(milliseconds=offset_ms or 0)
+	return now.replace(microsecond=0)

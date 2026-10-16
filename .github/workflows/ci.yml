@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          args: check
+      - uses: astral-sh/ruff-action@v3
+        with:
+          args: format --check
+
+  protocol:
+    # The fdms/ protocol library has no Frappe dependency: spec vectors,
+    # receipt maths, signing, wire format, client and error catalogue.
+    name: Protocol library (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install "cryptography>=41" "requests>=2.31" "pytest>=8"
+      - run: python -m pytest -q
+
+  integration:
+    name: ERPNext ${{ matrix.branch }}
+    runs-on: ubuntu-latest
+    needs: protocol
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - branch: version-15
+            python: "3.11"
+            node: "18"
+          - branch: version-16
+            python: "3.14"
+            node: "24"
+
+    services:
+      redis-cache:
+        image: redis:alpine
+        ports: ["13000:6379"]
+      redis-queue:
+        image: redis:alpine
+        ports: ["11000:6379"]
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: --health-cmd="mariadb-admin ping" --health-interval=5s --health-timeout=2s --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install MariaDB client
+        run: sudo apt-get update && sudo apt-get install -y mariadb-client
+
+      - name: Set up bench
+        run: |
+          pip install frappe-bench
+          bench init --skip-redis-config-generation --skip-assets --frappe-branch ${{ matrix.branch }} \
+            --python "$(which python)" ~/frappe-bench
+          mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
+          mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+
+      - name: Install ERPNext and zw_compliance
+        working-directory: /home/runner/frappe-bench
+        env:
+          CI: "Yes"
+        run: |
+          bench get-app --branch ${{ matrix.branch }} erpnext
+          bench get-app zw_compliance $GITHUB_WORKSPACE
+          bench setup requirements --dev
+          bench new-site --db-root-password root --admin-password admin test_site
+          bench --site test_site install-app erpnext
+          bench --site test_site install-app zw_compliance
+          bench --site test_site set-config allow_tests true
+
+      - name: Integration tests (in-process FDMS)
+        working-directory: /home/runner/frappe-bench
+        run: bench --site test_site run-tests --app zw_compliance
+
+      - name: Migrate is idempotent
+        working-directory: /home/runner/frappe-bench
+        run: bench --site test_site migrate
+
+      - name: End to end against the zimra-fdms simulator (HTTPS + mTLS)
+        working-directory: /home/runner/frappe-bench
+        run: |
+          npx --yes -p zimra-fdms@0.4.1 zimra-fdms-simulator --port 8443 --ca "$RUNNER_TEMP/sim-ca.pem" &
+          for i in $(seq 1 30); do [ -s "$RUNNER_TEMP/sim-ca.pem" ] && break; sleep 1; done
+          bench --site test_site execute zw_compliance.fiscalisation.tests.e2e.run \
+            --kwargs "{'url': 'https://127.0.0.1:8443', 'ca': '$RUNNER_TEMP/sim-ca.pem'}" | tee e2e.log
+          grep -q '^PASSED$' e2e.log

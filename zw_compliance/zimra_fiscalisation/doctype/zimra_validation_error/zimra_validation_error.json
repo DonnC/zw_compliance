@@ -1,0 +1,61 @@
+{
+ "actions": [],
+ "creation": "2026-10-16 09:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "code",
+  "colour",
+  "description",
+  "fix"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Code",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "colour",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Colour",
+   "options": "\nGrey\nYellow\nRed",
+   "read_only": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description",
+   "read_only": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "fix",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "What to do",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-16 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "Zimra Validation Error",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

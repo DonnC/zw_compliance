@@ -1,275 +1,252 @@
-# Zimbabwe Compliance (`zw_compliance`)
+# Zimbabwe Compliance for ERPNext
 
-Zimbabwe compliance for Frappe/ERPNext — the same idea as `india_compliance`
-or the UAE compliance apps, for Zimbabwean businesses. The ERPNext site acts
-as a registered ZIMRA **virtual fiscal device**: it registers itself with
-FDMS, signs every receipt, manages the fiscal-day lifecycle, and reports
-back — all from inside ERPNext, in the ERPNext way (Sales/POS Invoices,
-Print Formats, Reports, standard doctype permissions).
+`zw_compliance` makes ERPNext compliant with Zimbabwean tax law, starting with
+**ZIMRA fiscalisation**. The ERPNext site registers with ZIMRA's Fiscalisation
+Data Management System (FDMS) as a virtual fiscal device. Every Sales Invoice
+and POS Invoice is then signed, numbered, chained, reported to ZIMRA and
+printed in ZIMRA's mandatory layouts, with no extra steps for the person at
+the till.
 
-**Status**: ZIMRA FDMS fiscalisation (this document) is implemented.
-Payroll (PAYE/NSSA/ZIMDEF) and an HS-code catalogue browser are on the
-roadmap — see [Roadmap](#roadmap).
+It follows the pattern of ERPNext's regional apps (India Compliance, the UAE
+VAT module): native documents, standard permissions, standard print formats
+and reports. There is no middleware service to run.
 
-## Why this exists
+| | |
+|---|---|
+| **Specification** | ZIMRA *Fiscal Device Gateway API* v7.2 (online mode) |
+| **Platform** | Frappe / ERPNext v15 and v16 |
+| **Licence** | MIT |
+| **Status** | Fiscalisation complete; payroll (PAYE, NSSA, ZIMDEF) next, see [Roadmap](#roadmap) |
 
-Every Zimbabwean business running ERPNext eventually has to solve ZIMRA
-fiscalisation: device registration and certificate lifecycle, the stateful
-fiscal-day cycle, receipt counters and the hash chain, canonical signing
-strings, tax/payment-mode mapping, HS codes, offline queueing, and FDMS's
-own cryptic error codes. This app does that once, correctly, as open source,
-wired into ERPNext's native documents instead of a bolt-on middleware
-service.
+---
 
-## Architecture
+## Contents
 
-The fiscal engine is deliberately split from the Frappe app around it, the
-same way the reference SDK this was built from (see [Credits](#credits))
-separates its `core` from its platform adapters:
+- [What it does](#what-it-does)
+- [How it works](#how-it-works)
+- [See it with demo data](#see-it-with-demo-data)
+- [Install](#install)
+- [Set up a fiscal device (10 minutes)](#set-up-a-fiscal-device-10-minutes)
+- [Daily use](#daily-use)
+- [Remote API](#remote-api)
+- [Quality](#quality)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+- [Contributing, security, credits](#contributing)
 
-```
-zw_compliance/
-├── fdms/                      Pure-Python ZIMRA FDMS protocol engine.
-│   │                          No Frappe imports. No I/O beyond what's
-│   │                          injected through Signer / Transport / Storage
-│   │                          protocols. Fully unit-testable standalone.
-│   ├── device.py              FiscalDevice: the fiscal-day/receipt state
-│   │                          machine - config, status, open/close day,
-│   │                          sign/submit receipts, crash reconciliation
-│   ├── signing.py             Canonical signing strings (receipt + fiscal
-│   │                          day close) - the byte-exact rules FDMS
-│   │                          validates signatures against
-│   ├── signer.py              Signer protocol, ASN.1 DER <-> P1363 ECDSA
-│   ├── csr.py                 CSR building for device registration/renewal
-│   ├── transport.py           Transport protocol, FdmsClient (endpoints,
-│   │                          headers, FDMS's own idempotent-only retry
-│   │                          rules), the FDMS error catalogue
-│   ├── registration.py        RegisterDevice / GetServerCertificate
-│   ├── queue.py, journal.py   Offline receipt queue (ZIMRA's 72h grace
-│   │                          window), crash-safe by construction
-│   ├── money.py               Integer-cents arithmetic (FDMS signs cents;
-│   │                          floats are never trusted)
-│   ├── qr.py                  Verification QR payload
-│   ├── clock.py                Server-corrected clock (survives a drifted
-│   │                          device clock without red-flagging receipts)
-│   └── tests/                 Conformance vectors + unit tests - runs with
-│                              plain pytest, no Frappe site required
-│
-├── zimra/                     Frappe glue layer: wires fdms/ to a site.
-│   ├── connector.py           ZimraConnector - the one entry point every
-│   │                          doc hook / whitelisted API / scheduled task
-│   │                          calls into
-│   ├── storage.py             FrappeFileStorage - atomic, durable fiscal
-│   │                          state on disk (never Redis/cache - this
-│   │                          state must survive a restart)
-│   ├── journal.py             File-backed offline-queue journal
-│   ├── transport.py           mTLS transport over `requests`
-│   ├── signer.py               EC key handling via `cryptography`
-│   ├── lock.py                 Cross-process device lock (flock) so
-│   │                          concurrent Frappe workers can't race on
-│   │                          receiptGlobalNo
-│   ├── receipt_builder.py     Sales/POS Invoice -> ReceiptInput: tax
-│   │                          mapping, HS code checks, payment mapping,
-│   │                          buyer data, returns/credit-debit notes
-│   ├── fiscal_day.py           Syncs device state onto the desk-visible
-│   │                          Zimra Fiscal Day doctype
-│   ├── qr_render.py           Server-side QR PNG for print formats
-│   └── setup.py                Registration + GetConfig tax/account sync
-│
-├── zimbabwe_compliance/       Frappe module: doctypes, custom fields
-├── doc_events.py, tasks.py, api.py    Hook wiring, scheduler, desk API
-└── docs/ARCHITECTURE.md       Deeper technical detail: exact signing
-                                rules, state machine, offline queue
-```
+## What it does
 
-**Why the split matters**: the ZIMRA protocol logic (`fdms/`) has no idea
-Frappe exists. It is tested against FDMS's own published conformance
-vectors with plain `pytest` (`fdms/tests/test_vectors.py`) - no site, no
-database, no ORM. Only `zimra/` and the doctypes know about Frappe. This
-keeps the part where a one-byte mistake means a rejected fiscal day
-(canonical strings, the hash chain, counter accumulation) small, isolated,
-and independently verifiable - and reusable outside ERPNext if that's ever
-useful.
+**Fiscal device lifecycle**
+- Guided onboarding on the device form: verify the taxpayer with ZIMRA, register, receive the certificate, pull configuration. One click per step.
+- The ECC P-256 device key is generated on the server and stored encrypted, in a field only managers can see.
+- Certificate expiry warnings, with renewal by one click or automatically (opt-in).
+- Ping at ZIMRA's reporting frequency, plus a server-corrected clock so receipt dates never drift.
+- Several devices per company, chosen by POS Profile or by a company default.
 
-## What "virtual device" means here
+**Receipts**
+- Sales Invoices and POS Invoices are fiscalised on submit.
+- Invoices, credit notes (returns, including partial ones) and debit notes are covered.
+- Credit notes are negative, as the specification requires. Required notes, the original receipt reference, the 12-month limit, same currency, the credit limit and the original's taxes are all enforced before submit.
+- Receipt amounts are in the invoice currency, with tax computed per ZIMRA tax group (no cent drift).
+- Line and document discounts and multi-currency (USD, ZWG and so on) are supported.
+- Cash change and POS rounding become correct payment lines.
+- Unpaid balances and advances map to ZIMRA money types.
+- Buyer details are sent only for registered buyers (TIN), so walk-in sales are never rejected.
+- HS codes are required and length-checked per ZIMRA rules. They come from the item, or are inherited from the item group. ZIMRA's national HS list is pre-loaded.
 
-ZIMRA's FDMS treats every registered device as a black box that: holds a
-private key and device certificate, maintains a strictly sequential
-receipt counter and a hash chain between receipts, opens and closes fiscal
-days with signed counter summaries, and talks to FDMS over mutual TLS.
-This app *is* that device - one ZIMRA Settings singleton per ERPNext site,
-one key pair, one fiscal-day state machine, backed by durable file storage
-(`sites/<site>/private/files/zimra_state/`) so a worker restart or a
-network blip never produces a duplicate or skipped receipt number.
+**Sequencing that cannot break**
+- Global number, counter, hash chain, signature and QR code are produced **inside the invoice's own database transaction**, under a device row lock.
+- A failed or rolled-back submit therefore never uses up a number. Two cashiers never get the same one.
+- A background job then sends receipts to ZIMRA strictly in order, retrying safely when the connection drops.
 
-## Fiscalisation flow
+**Fiscal days**
+- Days open automatically on the first sale, or at a set time.
+- The business is warned before ZIMRA's maximum day length. Days close automatically at a set time or before the limit, and the next sale rolls into a new day.
+- Before closing, counters are recomputed from the signed receipts and cross-checked with ZIMRA. A close is refused while any receipt is Grey or Red (the reason is shown).
+
+**Printing** (spec §10)
+- *Receipt48* (80 mm) and *Invoice A4*, for invoices, credit notes and debit notes, with QR code and verification code.
+- *Z report* for a closed day, *X report* for an open one.
+
+**Taxes, set up the ERPNext way**
+- From ZIMRA's tax table, the app creates:
+  - the VAT output (liability) and input (asset) accounts;
+  - Sales and Purchase Taxes and Charges Templates, with the standard rate as the company default;
+  - Item Tax Templates for zero-rated and exempt goods;
+  - a mapping that ties each one to its ZIMRA tax.
+- Supplier invoices use the matching purchase templates. Input VAT goes to the input account, and the VAT Summary report sets it against output VAT.
+
+**Reports and workspace**
+- A *ZIMRA Fiscalisation* workspace in two parts:
+  - **Compliance health**: unfiscalised invoices, receipts awaiting ZIMRA, rejected and flagged receipts, devices with sync errors, day closes pending, hours left in the fiscal day, certificate days left; plus live lists of what needs attention;
+  - **Sales and VAT**: fiscal sales per day and output VAT per tax (per currency), receipts by status, type and day, credit notes.
+- Six reports:
+  - **Fiscal Day Summary**
+  - **Fiscal Receipt Register**
+  - **Sync Exceptions**: anything not yet accepted, or flagged by ZIMRA, with the fix
+  - **VAT Summary**: output vs input
+  - **Fiscalisation Reconciliation**: every submitted invoice vs its receipt; finds gaps before ZIMRA does
+  - **Device Status**
+
+**Safe by default**
+- Fiscal receipts are read-only for everyone, including System Manager, and cannot be deleted.
+- A fiscalised invoice cannot be cancelled or deleted; the user is told to issue a credit note.
+- Copies and amendments never carry fiscal numbers.
+- Device secrets are restricted to a higher permission level.
+- The app cannot be uninstalled while receipts are unsent (spec §9 req. 22).
+
+## How it works
 
 ```mermaid
-sequenceDiagram
-    participant SI as Sales/POS Invoice
-    participant Hook as doc_events.fiscalise_on_submit
-    participant Conn as ZimraConnector
-    participant Builder as receipt_builder
-    participant Q as OfflineReceiptQueue
-    participant Dev as fdms.FiscalDevice
-    participant FDMS as ZIMRA FDMS
-
-    SI->>Hook: on_submit
-    Hook->>Conn: fiscalise(doc)
-    Conn->>Conn: check_certificate()
-    Conn->>Conn: with device_lock(): reconcile(), ensure_day_open()
-    Conn->>Builder: build_receipt_input(doc, settings)
-    Builder-->>Conn: ReceiptInput (lines, taxes, payments, buyer)
-    Conn->>Q: submit_or_enqueue(receipt_input)
-    Q->>Dev: sign_receipt() - counters, hash chain, ECDSA signature
-    Dev->>FDMS: SubmitReceipt (mTLS)
-    alt FDMS reachable
-        FDMS-->>Dev: receiptID, server signature, validation errors
-        Dev-->>Conn: SubmittedReceipt (+ QR data)
-        Conn->>SI: db_set ZIMRA fields, QR print view
-        Conn->>Conn: create Zimra Receipt Log
-    else network failure
-        Q->>Q: journal the signed receipt (72h offline grace window)
-        Conn->>SI: mark "Queued (Offline)"
-    end
+flowchart LR
+    A["Submit Sales / POS Invoice"] --> B{"Would ZIMRA<br/>accept it?"}
+    B -- "no: reason shown" --> A
+    B -- yes --> C["Number · chain · sign · QR<br/>(same DB transaction)"]
+    C --> D["Fiscal Receipt: Queued<br/>printable immediately"]
+    D -- "after commit, strictly in order" --> E[("ZIMRA FDMS")]
+    E --> F["Submitted · FDMS signature verified"]
+    D -. "offline: waits, retries,<br/>never skips or reorders" .-> E
 ```
 
-## Doctype reference
+The ZIMRA protocol itself lives in `zw_compliance/fdms`, a pure Python library
+with no Frappe dependency, tested against the specification's own examples.
+The Frappe layer (`zw_compliance/fiscalisation`) maps ERPNext documents onto
+it. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-| Doctype | Purpose |
-| --- | --- |
-| **Zimra Settings** (Single) | Device identity, environment, certificates, allowed currencies, automation config. The read-only "Fiscal State" section mirrors the device's live state for desk visibility - the durable file store, not this doctype, is the source of truth. |
-| **Zimra Fiscal Day** | One record per opened/closed fiscal day: counters, document quantities, the exact date used for CloseDay signing. |
-| **Zimra Fiscal Day Detail** | Child table: per-currency/tax/money-type totals for a fiscal day. |
-| **Zimra Receipt Log** | Immutable record of every fiscalised (or queued) receipt: global no, counter, signatures, QR data, tax breakdown, validation errors. |
-| **Zimra Receipt Tax Detail** | Child table: per-tax-ID breakdown on a receipt log. |
-| **Zimra Validation Error** | Child table: one FDMS validation error (code, colour, cause, fix), used on both Receipt Log and Fiscal Day. |
-| **Zimra Tax Mapping** | ZIMRA numeric tax ID <-> ERPNext Sales Taxes and Charges Template / Item Tax Template / Account. Auto-populated by `sync_config`. |
-| **Zimra Payment Mode Mapping** | ERPNext Mode of Payment <-> ZIMRA MoneyType (Cash/Card/MobileWallet/...). |
-| **Zimra HSN Code** | The National HS Code catalogue (seeded on install), linked from Item / Item Group. |
+Online first, offline safe: while ZIMRA is reachable a receipt is accepted
+within seconds of submit. When it is not, invoicing carries on. Receipts are
+already signed and printable, and they queue until the connection returns.
+Because order is enforced, the queue drains without gaps or duplicates (§4.7).
 
-## Setup
+## See it with demo data
+
+No ZIMRA connection needed: the demo replays three weeks of trading through
+the real flow (invoices, credit notes, ZWG sales, daily Z reports, and a
+dropped connection today) against the built-in FDMS simulator. It lives in its
+own company and is removed with one command.
 
 ```bash
-cd $PATH_TO_YOUR_BENCH
-bench get-app zw_compliance $URL_OF_THIS_REPO --branch main
-bench install-app zw_compliance
+bench --site <site> execute zw_compliance.fiscalisation.demo.seed   # ZW Demo Traders
+bench --site <site> execute zw_compliance.fiscalisation.demo.wipe   # removes all of it
 ```
 
-1. **Zimra Settings** → set Company, Environment (Test/Production), Device
-   ID, Serial No, Model Name/Version, Activation Key (from the FDMS device
-   portal), Allowed Currencies, and the Payment Mode Mapping table.
-2. **Register the device** (Zimra Settings → Register Device, or
-   `zw_compliance.api.register_device`): generates the device key pair,
-   submits a CSR with your activation key, stores the returned certificate.
-3. **Sync config** (`zw_compliance.api.sync_config`): pulls taxpayer info
-   and applicable taxes from FDMS, and auto-provisions matching ERPNext Tax
-   Accounts, Sales Taxes and Charges Templates, and Zimra Tax Mappings.
-4. Map each Item/Item Group's **HS Code** and confirm the tax mappings look
-   right for your COA.
-5. Submit a Sales or POS Invoice. The fiscal day opens automatically (if
-   `Auto Open Fiscal Day` is on) and the receipt is fiscalised on submit.
+Then open the **ZIMRA Fiscalisation** workspace and pick the company *ZW Demo Traders*.
 
-### Offline behaviour
+## Install
 
-If FDMS is unreachable, the signed receipt is journalled to a durable
-append-only file (`zimra/journal.py`) instead of being lost or blocking the
-invoice submission - this is ZIMRA's documented 72-hour offline grace
-window. `zw_compliance.api.flush_offline_queue` retries the backlog FIFO
-once connectivity returns; `queue_status` reports queue depth and the age
-of the oldest pending receipt so you can alert before the window closes.
-
-### Certificate lifecycle
-
-`ZimraConnector.check_certificate()` runs once per connector construction
-(not per receipt) and hard-blocks fiscalisation with a clear desk error if
-the certificate is missing or expired, rather than letting it fail deep
-inside an mTLS handshake. A daily scheduled task
-(`tasks.check_certificate_renewal`) raises a System Manager notification
-starting `certificate_renewal_warning_days` (default 30) before expiry.
-
-### Sequence integrity
-
-`receiptGlobalNo` and the receipt-to-receipt hash chain are never derived
-from anything the ERPNext document layer controls - they live only in the
-device's durable file-backed state (`zimra/storage.py`), and every
-operation that can issue a number goes through `zimra/lock.py`'s
-cross-process lock plus `FiscalDevice.reconcile()` first, so concurrent
-Frappe workers and a half-finished request from a previous crash can never
-produce a duplicate or gap in the sequence (FDMS error RCPT012).
-
-## Development
+Requires ERPNext v15 or v16.
 
 ```bash
-cd apps/zw_compliance
-pre-commit install        # ruff, eslint, prettier, pyupgrade
-
-# Fiscal engine tests - no Frappe site needed:
-pip install pytest
-PYTHONPATH=. pytest zw_compliance/fdms/tests/
-
-# Frappe-level tests:
-bench --site $SITE set-config allow_tests true
-bench --site $SITE run-tests --app zw_compliance
+bench get-app https://github.com/<your-org>/zw_compliance
+bench --site <site> install-app zw_compliance
 ```
 
-`zw_compliance/fdms/tests/test_vectors.py` replays
-[zimra-fdms](https://www.zimrasdk.com/)'s own published conformance vectors
-(canonical strings, hashes, ECDSA signatures, tax rounding, QR payloads)
-against this Python port and asserts byte-for-byte agreement. Any change to
-`fdms/signing.py` or `fdms/device.py`'s receipt/counter maths should keep
-this suite green.
+Install and every `bench migrate` are idempotent. They create:
+- the roles *ZIMRA Manager* and *ZIMRA User*;
+- the custom fields (all owned by the app and removed on uninstall);
+- the default settings;
+- the ZIMRA HS code list.
 
-For end-to-end testing without touching ZIMRA's real test environment, the
-reference SDK ships a local FDMS simulator with real mutual TLS and the
-same validation-error replay behaviour as the live test environment:
+## Set up a fiscal device (10 minutes)
 
-```bash
-npx zimra-fdms-simulator --port 8443   # writes zimra-simulator-ca.pem
+You need the device ID, serial number and activation key that ZIMRA issued
+for the device (from the ZIMRA self-service portal).
+
+1. **Zimra Settings**: check the allowed currencies (default `USD,ZWG`) and map any non-obvious Mode of Payment to a ZIMRA money type.
+2. **Zimra Fiscal Device → New**: company, environment (*Test* first), device ID, serial number, model. Tick *Default Device for Company*, or list the POS Profiles that use it. Save.
+3. Enter the **activation key** and press **Verify Taxpayer**. ZIMRA returns the taxpayer and branch it has on record. Confirm it is you.
+4. Press **Register Device**. The certificate is issued, the configuration is pulled, and taxes are provisioned. The device turns **Active**.
+5. Give each item an **HS code** (or set one on the item group). Zero-rated and exempt items get the Item Tax Template the app created.
+
+That's it. Submit a Sales Invoice and the *ZIMRA Fiscalisation* section on it
+fills in, with Status *Submitted* a moment later. Moving from another
+fiscal system? Enter its last receipt global number in *Last Receipt Global No
+of Previous Software* before registering, so numbering continues.
+
+Full walkthrough, end of day and troubleshooting by error code:
+[docs/USER_GUIDE.md](docs/USER_GUIDE.md).
+
+## Daily use
+
+| Who | What |
+|---|---|
+| Cashier, accounts | Nothing new: submit invoices as usual, print with *ZIMRA Receipt48* or *ZIMRA Invoice A4*. For returns use **Create → Return / Credit Note** and give a reason. |
+| ZIMRA Manager | Glance at the workspace: *Awaiting Submission*, *Rejected*, *Flagged*. Days close on schedule; use **Close Fiscal Day** to close early. Read the Z report. |
+| Accountant | VAT Summary for the return; Fiscalisation Reconciliation before filing. |
+
+## Remote API
+
+Web shops, mobile apps and external tills can fiscalise through a small,
+uniform JSON API. Every response is either `{"ok": true, "data": …}` or
+`{"ok": false, "error": {"code", "message", "zimra_code"?}}`. Every write is
+idempotent through a `client_reference`.
+
+```http
+POST /api/method/zw_compliance.api.v1.fiscalisation.fiscalise_invoice
+Authorization: token <api_key>:<api_secret>
+
+{"client_reference": "WEB-10031", "customer": "Walk-in", "items": [{"item_code": "SKU-1", "qty": 2}]}
 ```
 
-Point `Zimra Settings` → API URL Override at `https://localhost:8443` and
-the FDMS Server Certificate attachment at the simulator's CA to run the
-full register → open day → submit → close day cycle against it in CI or
-locally.
+Endpoints: `fiscalise_invoice`, `create_credit_note`, `get_receipt`,
+`get_device_status`. See [docs/API.md](docs/API.md).
+
+## Quality
+
+- **Specification vectors.** Signing strings and hashes are checked against the worked examples in the ZIMRA specification (credit note §13.2.1, fiscal day §13.3.1, QR §11). They are also checked against vectors from the zimra-fdms SDK that were verified on ZIMRA's live test environment.
+- **Integration tests** run real ERPNext documents against an in-process FDMS:
+  - onboarding;
+  - sale → receipt → ZIMRA;
+  - rollback safety, sequencing and chaining;
+  - mixed taxes and discounts, B2C and B2B;
+  - POS change and POS Invoice consolidation;
+  - credit and debit notes;
+  - day rollover, close, refused close and Z report;
+  - outages, lost answers and 5xx retries;
+  - permissions, print formats, reports and the remote API.
+- **End to end.** A full cycle over real HTTPS with mutual TLS against the [zimra-fdms](https://github.com/munashe-chivandire/zimra-fdms) simulator.
+- **CI** runs all of the above on ERPNext v15 and v16 ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
+Every specification rule and where it is enforced and tested:
+[docs/COMPLIANCE.md](docs/COMPLIANCE.md).
+
+## Documentation
+
+| Document | For |
+|---|---|
+| [User guide](docs/USER_GUIDE.md) | Business users and implementers |
+| [Compliance matrix](docs/COMPLIANCE.md) | Auditors, reviewers: spec requirement → code → test, judgement calls |
+| [Architecture](docs/ARCHITECTURE.md) | Developers |
+| [Remote API](docs/API.md) | Integrators |
+| [Development](docs/DEVELOPMENT.md) | Contributors: tests, simulator, CI |
+| [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) | |
+
+The ZIMRA specification PDF is ZIMRA's document and is not redistributed
+here. Obtain it from ZIMRA.
 
 ## Roadmap
 
-- [x] ZIMRA FDMS fiscalisation (device registration, fiscal-day lifecycle,
-      receipt signing/QR, returns, offline queue, reports)
-- [ ] Payroll: PAYE tables, NSSA, ZIMDEF, AIDS Levy
-- [ ] HS Code catalogue browser + bulk-assignment tooling
-- [ ] E-invoicing / e-signature helpers for non-fiscal documents
+`zw_compliance` is meant to be the one app a Zimbabwean business installs for
+statutory compliance on ERPNext. Each pillar gets its own Frappe module and
+service package, as fiscalisation does:
 
-Issues and PRs for any of the above are welcome.
+- [x] ZIMRA fiscalisation, online mode
+- [ ] ZIMRA offline mode (submitFile / getFileStatus, §4.9–4.10)
+- [ ] Payroll: PAYE tables, AIDS levy, tax credits, ITF16, P2 returns
+- [ ] NSSA (POBS, APWCS) and ZIMDEF contributions
+- [ ] VAT 7 return preparation
+
+## Contributing
+
+Issues and pull requests are welcome; please read
+[CONTRIBUTING.md](CONTRIBUTING.md). Report security problems privately, as
+described in [SECURITY.md](SECURITY.md).
 
 ## Credits
 
-The ZIMRA FDMS canonical signing rules, state-machine design and hard-won
-protocol details (ASN.1 DER vs P1363 signatures, the fiscal-day-opened-date
-quirk in CloseDay signing, counter sort orders, QR format) this app's
-`fdms/` package is ported from
-**[zimra-fdms](https://www.zimrasdk.com/)** ([source](https://github.com/munashe-chivandire/zimra-fdms)),
-an MIT-licensed TypeScript SDK verified live against ZIMRA's FDMS test
-environment. `zw_compliance/fdms/` is an independent Python port of its
-protocol logic (not a generated or mechanical translation), re-implemented
-against the same conformance vectors it publishes; see
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the specific deviations
-and why each was made. If you need managed ZIMRA onboarding, approval or
-ongoing compliance monitoring rather than the DIY integration, the SDK's
-authors point to **Goko Consultancy and Training Services**.
+- The protocol work learned a great deal from **[zimra-fdms](https://github.com/munashe-chivandire/zimra-fdms)** by Shaun Chivandire (MIT), a TypeScript SDK tested against ZIMRA's live environment. Its simulator, ported to Python, is the test FDMS here, and its changelog of live findings shaped several safeguards (see [COMPLIANCE.md](docs/COMPLIANCE.md#lessons-from-live-testing)).
+- Built on [Frappe](https://frappe.io/framework) and [ERPNext](https://erpnext.com).
 
-### Contributing
+## Licence
 
-This app uses `pre-commit` for code formatting and linting:
-
-```bash
-cd apps/zw_compliance
-pre-commit install
-```
-
-Tools: `ruff`, `eslint`, `prettier`, `pyupgrade`.
-
-### License
-
-MIT
+MIT, see [license.txt](license.txt).

@@ -1,0 +1,92 @@
+{
+ "actions": [],
+ "creation": "2026-10-16 09:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "counter_type",
+  "currency",
+  "tax_id",
+  "tax_percent",
+  "is_exempt",
+  "money_type",
+  "value"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "counter_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Counter Type",
+   "options": "SaleByTax\nSaleTaxByTax\nCreditNoteByTax\nCreditNoteTaxByTax\nDebitNoteByTax\nDebitNoteTaxByTax\nBalanceByMoneyType",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "tax_id",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Tax ID",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "tax_percent",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Tax %",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "is_exempt",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Exempt",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "money_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Money Type",
+   "options": "\nCash\nCard\nMobileWallet\nCoupon\nCredit\nBankTransfer\nOther",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "value",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Value",
+   "options": "currency",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-16 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "Zimra Fiscal Counter",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -3,15 +3,15 @@ name = "zw_compliance"
 authors = [
     { name = "Donald Chinhuru", email = "donnclab@gmail.com"}
 ]
-description = "A Frappe|ERPNext compliance app for the Zimbabwean businesses"
+description = "Zimbabwe tax compliance for ERPNext: ZIMRA fiscalisation (FDMS v7.2) and more"
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    # "frappe~=15.0.0" # Installed and managed by bench.
+    # frappe and erpnext (v15 or v16) are installed and managed by bench.
+    # Both already ship these; they are listed because fdms/ imports them directly.
     "cryptography>=41.0",
     "requests>=2.31",
-    "qrcode[pil]>=7.4",
 ]
 
 [build-system]
@@ -20,7 +20,11 @@ build-backend = "flit_core.buildapi"
 
 # These dependencies are only installed when developer mode is enabled
 [tool.bench.dev-dependencies]
-# package_name = "~=1.1.0"
+pytest = ">=8.0"
+
+[tool.pytest.ini_options]
+# The protocol library has no Frappe dependency and is tested with plain pytest.
+testpaths = ["zw_compliance/fdms/tests"]
 
 [tool.ruff]
 line-length = 110

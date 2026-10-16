@@ -1,89 +1,60 @@
-"""Signer protocol and DER/P1363 ECDSA conversion, ported from src/core/signer.ts.
+"""Device key handling and signing (spec §12, §13.1).
 
-FDMS requires ASN.1 DER-encoded ECDSA-P256-over-SHA256 signatures and
-rejects raw IEEE P1363 (r||s) signatures with RCPT020/BadCertificateSignature.
-
-Kept as a protocol (rather than hardcoding `cryptography` calls into
-device.py) so a future HSM/KMS-backed signer is possible and so tests can
-inject a fake signer - unlike the TS SDK this is a *sync* protocol, since
-Frappe request handlers and background jobs are sync.
+ZIMRA accepts ECC ECDSA on secp256r1 (preferred) or RSA 2048 device keys
+(§4.2). Signatures are ASN.1 DER ECDSA-with-SHA256, or SHA256withRSA
+(PKCS#1 v1.5). The hash sent next to the signature is the base64 SHA-256 of
+the same canonical string (§5.3, §13.1).
 """
 
 from __future__ import annotations
 
 import base64
 import hashlib
-from dataclasses import dataclass
-from typing import Literal, Protocol
+
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
 
 from .types import SignatureData
 
-EcdsaSignatureFormat = Literal["p1363", "der"]
+PrivateKey = ec.EllipticCurvePrivateKey | rsa.RSAPrivateKey
 
 
-class Signer(Protocol):
-	def sign(self, data: bytes) -> bytes:
-		"""ASN.1 DER ECDSA P-256 signature over SHA-256(data). Hashes internally;
-		callers pass the raw message bytes, not a pre-computed digest."""
-		...
-
-	def public_key_spki(self) -> bytes:
-		"""DER SubjectPublicKeyInfo of the matching public key, for CSR building."""
-		...
+def generate_private_key() -> ec.EllipticCurvePrivateKey:
+	"""A new secp256r1 key, ZIMRA's first preference (§4.2)."""
+	return ec.generate_private_key(ec.SECP256R1())
 
 
-def _encode_der_integer(b: bytes) -> bytes:
-	i = 0
-	while i < len(b) - 1 and b[i] == 0:
-		i += 1
-	v = b[i:]
-	if v[0] & 0x80:
-		v = b"\x00" + v
-	return bytes([0x02, len(v)]) + v
+def private_key_to_pem(key: PrivateKey) -> str:
+	return key.private_bytes(
+		encoding=serialization.Encoding.PEM,
+		format=serialization.PrivateFormat.PKCS8,
+		encryption_algorithm=serialization.NoEncryption(),
+	).decode("ascii")
 
 
-def p1363_to_der(p1363: bytes) -> bytes:
-	half = len(p1363) // 2
-	r = _encode_der_integer(p1363[:half])
-	s = _encode_der_integer(p1363[half:])
-	return bytes([0x30, len(r) + len(s)]) + r + s
+def load_private_key(pem: str) -> PrivateKey:
+	key = serialization.load_pem_private_key(pem.encode("ascii"), password=None)
+	if isinstance(key, ec.EllipticCurvePrivateKey):
+		if not isinstance(key.curve, ec.SECP256R1):
+			raise ValueError("ZIMRA only accepts ECC keys on the secp256r1 (P-256) curve.")
+		return key
+	if isinstance(key, rsa.RSAPrivateKey):
+		if key.key_size < 2048:
+			raise ValueError("ZIMRA requires RSA keys of at least 2048 bits.")
+		return key
+	raise ValueError("Unsupported device key type; use ECC P-256 or RSA 2048.")
 
 
-def der_to_p1363(der: bytes, byte_length: int = 32) -> bytes:
-	i = 0
-	assert der[i] == 0x30
-	i += 1
-	if der[i] & 0x80:
-		i += 1 + (der[i] & 0x7F)
-	else:
-		i += 1
-
-	def read_int() -> bytes:
-		nonlocal i
-		assert der[i] == 0x02
-		i += 1
-		length = der[i]
-		i += 1
-		v = der[i : i + length]
-		i += length
-		while len(v) > byte_length and v[0] == 0:
-			v = v[1:]
-		out = bytearray(byte_length)
-		out[byte_length - len(v) :] = v
-		return bytes(out)
-
-	return read_int() + read_int()
+def sha256_base64(data: str | bytes) -> str:
+	raw = data.encode("utf-8") if isinstance(data, str) else data
+	return base64.b64encode(hashlib.sha256(raw).digest()).decode("ascii")
 
 
-def sha256_base64(data: bytes) -> str:
-	return base64.b64encode(hashlib.sha256(data).digest()).decode("ascii")
-
-
-def sign_canonical_string(signer: Signer, canonical: str, format: EcdsaSignatureFormat = "der") -> SignatureData:
+def sign(key: PrivateKey, canonical: str) -> SignatureData:
+	"""Hash and sign a canonical string (§13.1)."""
 	data = canonical.encode("utf-8")
-	der_signature = signer.sign(data)
-	signature = der_signature if format == "der" else der_to_p1363(der_signature)
-	return SignatureData(
-		hash=sha256_base64(data),
-		signature=base64.b64encode(signature).decode("ascii"),
-	)
+	if isinstance(key, ec.EllipticCurvePrivateKey):
+		raw = key.sign(data, ec.ECDSA(hashes.SHA256()))  # DER-encoded
+	else:
+		raw = key.sign(data, padding.PKCS1v15(), hashes.SHA256())
+	return SignatureData(hash=sha256_base64(data), signature=base64.b64encode(raw).decode("ascii"))

@@ -1,38 +1,34 @@
-"""CSR building for FDMS device registration/renewal.
+"""Certificate signing requests for registerDevice / issueCertificate (spec §4.2, §12).
 
-The TS SDK hand-rolls a DER writer (src/core/asn1.ts, csr.ts) because
-browser/Android/HSM signers can't export key material, so the SDK must
-build the CertificationRequestInfo bytes itself and only ask the Signer for
-a raw signature over them. In this Python port we always hold the EC
-private key locally (via `cryptography`), so we build the PKCS#10 request
-with `cryptography.x509.CertificateSigningRequestBuilder` instead of a hand
-port of the DER writer - it produces an equivalent, standards-correct CSR
-(CN=ZIMRA-{serial}-{deviceId:010d}, secp256r1, ecdsa-with-SHA256, no
-attributes) more safely than re-deriving ASN.1 encoding rules by hand.
-
-If a true HSM-backed Signer is ever needed, add a signer.sign()-based DER
-CSR builder here without touching the rest of fdms/ - device.py and
-registration.py only call `build_csr()` / `device_common_name()`.
+The subject CN must be ``ZIMRA-<serial no>-<device id zero-padded to 10>``,
+e.g. ``ZIMRA-SN: 001-0000000187``. Other subject fields are optional and are
+deliberately omitted: if present they must match ZIMRA's values exactly, so
+leaving them out removes a way to be rejected.
 """
 
 from __future__ import annotations
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
+
+from .signer import PrivateKey
 
 
-def device_common_name(serial_number: str, device_id: int, client_prefix: str = "ZIMRA") -> str:
-	return f"{client_prefix}-{serial_number}-{device_id:010d}"
+def device_common_name(serial_number: str, device_id: int) -> str:
+	return f"ZIMRA-{serial_number}-{device_id:010d}"
 
 
-def build_csr(private_key: EllipticCurvePrivateKey, common_name: str) -> str:
-	"""Return a PEM-encoded PKCS#10 CertificateSigningRequest signed by
-	`private_key`, subject CN=`common_name`, no extensions/attributes.
-	"""
-	csr = (
-		x509.CertificateSigningRequestBuilder()
-		.subject_name(x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, common_name)]))
-		.sign(private_key, hashes.SHA256())
+def build_csr(private_key: PrivateKey, serial_number: str, device_id: int) -> str:
+	"""PEM PKCS#10 request signed with SHA-256 (ecdsa-with-SHA256 or SHA256WithRSA)."""
+	subject = x509.Name(
+		[x509.NameAttribute(x509.NameOID.COMMON_NAME, device_common_name(serial_number, device_id))]
 	)
+	csr = x509.CertificateSigningRequestBuilder().subject_name(subject).sign(private_key, hashes.SHA256())
 	return csr.public_bytes(serialization.Encoding.PEM).decode("ascii")
+
+
+def certificate_valid_till(certificate_pem: str):
+	"""Naive UTC expiry of a device certificate."""
+	cert = x509.load_pem_x509_certificate(certificate_pem.encode("ascii"))
+	expiry = getattr(cert, "not_valid_after_utc", None)
+	return expiry.replace(tzinfo=None) if expiry else cert.not_valid_after

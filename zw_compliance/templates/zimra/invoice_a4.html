@@ -1,0 +1,88 @@
+{#- InvoiceA4 view (tax inclusive), spec v7.2 §10.2. Field numbers [n] refer to §10.3. Expects `z`. -#}
+{%- from "zw_compliance/templates/zimra/_macros.html" import money, qty, fdate, tax_label -%}
+{%- set r = z.record -%}
+<div class="zimra-a4">
+	<table class="head"><tr>
+		<td class="w60"><h2>{{ z.title }}</h2></td>{# [9] #}
+		<td class="w40 right">
+			<div class="qr">{{ zimra_qr_svg(r.qr_url, 3) }}</div>{# [45] #}
+			<div>{{ _("Verification code") }}</div>
+			<div class="b">{{ r.verification_code }}</div>{# [46] #}
+			<div class="small">{{ _("You can verify this receipt manually at") }} {{ z.verify_url }}</div>{# [48] #}
+		</td>
+	</tr></table>
+	<table class="parties"><tr>
+		<td class="w50">
+			<div class="label">{{ _("SELLER") }}</div>
+			<div class="b">{{ r.taxpayer_name }}</div>{# [2] #}
+			<div>TIN: {{ r.taxpayer_tin }}</div>{# [3] #}
+			{% if r.vat_number %}<div>VAT No: {{ r.vat_number }}</div>{% endif %}{# [4] #}
+			{% if r.branch_name and r.branch_name != r.taxpayer_name %}<div>{{ r.branch_name }}</div>{% endif %}{# [5] #}
+			{% if r.branch_address %}<div>{{ r.branch_address }}</div>{% endif %}{# [6] #}
+			{% if r.branch_email %}<div>{{ r.branch_email }}</div>{% endif %}{# [7] #}
+			{% if r.branch_phone %}<div>{{ r.branch_phone }}</div>{% endif %}{# [8] #}
+		</td>
+		<td class="w50">
+			{% if z.buyer %}{# [10]-[16], [51] #}
+				<div class="label">{{ _("BUYER") }}</div>
+				<div class="b">{{ z.buyer.register_name }}</div>
+				{% if z.buyer.trade_name %}<div>{{ z.buyer.trade_name }}</div>{% endif %}
+				<div>TIN: {{ z.buyer.tin }}</div>
+				{% if z.buyer.vat_number %}<div>VAT: {{ z.buyer.vat_number }}</div>{% endif %}
+				{% if z.buyer.address %}<div>{{ [z.buyer.address.house_no, z.buyer.address.street, z.buyer.address.city, z.buyer.address.province] | select | join(", ") }}</div>{% endif %}
+				{% if z.buyer.contacts and z.buyer.contacts.email %}<div>{{ z.buyer.contacts.email }}</div>{% endif %}
+				{% if z.buyer.contacts and z.buyer.contacts.phone_no %}<div>{{ z.buyer.contacts.phone_no }}</div>{% endif %}
+			{% endif %}
+		</td>
+	</tr></table>
+	<table class="info">
+		<tr><td>Invoice No: {{ r.receipt_counter }}/{{ r.receipt_global_no }}</td><td>Fiscal day No: {{ r.fiscal_day_no }}</td></tr>{# [17]-[19] #}
+		<tr><td>Customer reference No: {{ r.invoice_no }}</td><td>Date: {{ fdate(z.receipt.date) }}</td></tr>{# [20], [23] #}
+		<tr><td>Device Serial No: {{ r.device_serial_no }}</td><td>Fiscal device ID: {{ r.device_id }}</td></tr>{# [21]-[22] #}
+	</table>
+	{% if r.receipt_type != "FiscalInvoice" %}{# [24]-[28] #}
+		<div class="credited">
+			<div class="b center">{{ "CREDITED INVOICE" if r.receipt_type == "CreditNote" else "DEBITED INVOICE" }}</div>
+			<table class="info">
+				<tr><td>Invoice No: {{ r.original_receipt_global_no }}</td><td>Date: {{ fdate(r.original_receipt_date) }}</td></tr>
+				<tr><td>Customer reference No: {{ r.original_invoice_no }}</td><td>Device Serial No: {{ r.original_device_serial_no }}</td></tr>
+			</table>
+		</div>
+	{% endif %}
+	<table class="lines">
+		<thead><tr><th>{{ _("Code") }}</th><th>{{ _("Description") }}</th><th class="right">{{ _("Qty") }}</th><th class="right">{{ _("Price") }}</th><th class="right">{{ _("VAT") }}</th><th class="right">{{ _("Total amount (incl. tax)") }}</th></tr></thead>
+		<tbody>
+		{% for l in z.lines %}{# [29]-[34.1] #}
+			<tr>
+				<td>{{ l.hs_code or "" }}</td>
+				<td>{{ "Discount: " if l.is_discount else "" }}{{ l.name }}</td>
+				<td class="right">{{ qty(l.quantity) }}</td>
+				<td class="right">{{ money(l.price) if l.price is not none else "" }}</td>
+				<td class="right">{{ money(l.vat) if l.vat is not none else "-" }}</td>
+				<td class="right">{{ money(l.total) }}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	<table class="totals">
+		{% if z.is_vat_payer %}{% for t in z.taxes if t.percent %}
+			<tr><td>{{ _("Total") }} {{ "{:g}".format(t.percent) }}% {{ _("VAT") }}</td><td class="right">{{ money(t.tax) }}</td></tr>{# [41], [44] #}
+		{% endfor %}{% endif %}
+		<tr class="b"><td>{{ _("Invoice total") }}, {{ r.receipt_currency }}</td><td class="right">{{ money(z.receipt.total) }}</td></tr>{# [35]-[36] #}
+	</table>
+	{% if z.receipt.notes %}<div class="notes">{{ z.receipt.notes }}</div>{% endif %}{# [49] #}
+</div>
+<style>
+	.zimra-a4 { font-size: 11px; }
+	.zimra-a4 table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+	.zimra-a4 .w60 { width: 60%; } .zimra-a4 .w40 { width: 40%; } .zimra-a4 .w50 { width: 50%; vertical-align: top; }
+	.zimra-a4 .right { text-align: right; } .zimra-a4 .center { text-align: center; } .zimra-a4 .b { font-weight: bold; }
+	.zimra-a4 .label { font-weight: bold; color: #555; margin-bottom: 2px; }
+	.zimra-a4 .small { font-size: 9px; }
+	.zimra-a4 .qr svg { width: 30mm; height: 30mm; }
+	.zimra-a4 .lines th, .zimra-a4 .lines td { border-bottom: 1px solid #ccc; padding: 3px 4px; }
+	.zimra-a4 .totals { width: 50%; margin-left: 50%; }
+	.zimra-a4 .totals td { padding: 2px 4px; }
+	.zimra-a4 .credited { border: 1px solid #ccc; padding: 4px; margin-bottom: 10px; }
+	.zimra-a4 .notes { margin-top: 8px; }
+</style>
