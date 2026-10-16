@@ -28,6 +28,11 @@ after_install = "zw_compliance.fiscalisation.setup.install.after_install"
 after_migrate = "zw_compliance.fiscalisation.setup.install.after_migrate"
 before_uninstall = "zw_compliance.fiscalisation.setup.install.before_uninstall"
 
+# Testing
+# -------
+
+before_tests = "zw_compliance.testing.before_tests"
+
 # Document Events
 # ---------------
 

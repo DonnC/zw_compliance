@@ -31,7 +31,7 @@ mode). This replaces the earlier prototype entirely.
 - Workspace in two parts: *Compliance health* (unfiscalised invoices, awaiting, rejected, flagged, sync errors, pending closes, fiscal-day hours left, certificate days left, attention lists) and *Sales and VAT* (fiscal sales and output VAT per currency, receipt breakdowns).
 - Demo data (`zw_compliance.fiscalisation.demo.seed` / `wipe`): three weeks of history through the real flow against the built-in simulator, isolated in its own company and fully removable.
 - A new sale or **Send Now** retries a connection failure immediately instead of waiting out the back-off, so the queue drains as soon as the line is back.
-- In-process FDMS for tests (port of the zimra-fdms simulator), plus an end-to-end check against the zimra-fdms simulator over mutual TLS. CI on ERPNext v15 and v16.
+- In-process FDMS for tests (port of the zimra-fdms simulator), plus an end-to-end check against the zimra-fdms simulator over mutual TLS. CI on ERPNext v16 (manual trigger for now).
 
 ### Removed
 

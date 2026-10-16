@@ -23,7 +23,7 @@ Thank you for helping Zimbabwean businesses stay compliant on ERPNext.
 ## Style
 
 - Python: ruff (config in `pyproject.toml`), tabs, as in Frappe. Docstrings say *why*, and cite spec sections.
-- Use the framework's own APIs as found in the bench's `frappe` and `erpnext` source, and only those available in both v15 and v16.
+- Use the framework's own APIs as found in the bench's `frappe` and `erpnext` source, and only those available in v15 and later.
 - Name things in business language in the UI; ZIMRA's names belong in code and payloads.
 
 ## Licence

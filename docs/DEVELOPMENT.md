@@ -22,7 +22,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md). In short:
   - a spec reference in the code (`# §13.2.1`);
   - a test, ideally against an example from the specification;
   - an entry in [COMPLIANCE.md](COMPLIANCE.md).
-- Frappe and ERPNext APIs: use what exists in **both v15 and v16** (CI runs both). Read the framework source in your bench rather than relying on memory or blog posts.
+- Frappe and ERPNext APIs: use what exists in **v15 and later** (CI tests v16). Read the framework source in your bench rather than relying on memory or blog posts.
 - Custom fields are defined in code (`fiscalisation/setup/custom_fields.py`), each with `module = "ZIMRA Fiscalisation"`. Never export them as fixtures.
 - Fiscal records (`Zimra Fiscal Receipt`, `Zimra Fiscal Day`) are written only by code, with `ignore_permissions`. Never add write permissions to them.
 
@@ -102,10 +102,18 @@ company's records directly, since the guards forbid deleting fiscal records.
 
 ## CI
 
-`.github/workflows/ci.yml` runs:
+`.github/workflows/ci.yml` is **manual for now**: start it from *Actions → CI →
+Run workflow* (the automatic triggers are kept, commented out, in the file). It
+runs:
 - ruff;
-- the protocol tests on Python 3.10 and 3.14;
-- install, the integration tests, an idempotent re-migrate and the end-to-end run, on ERPNext `version-15` (Python 3.11, Node 18) and `version-16` (Python 3.14, Node 24).
+- the protocol tests on Python 3.14;
+- install, the integration tests, an idempotent re-migrate and the end-to-end
+  run, on ERPNext `version-16` (Python 3.14, Node 24).
+
+`bench run-tests --app zw_compliance` runs only this app's `before_tests`
+hooks, so `zw_compliance.testing.before_tests` calls ERPNext's own: it
+completes the setup wizard on a fresh site (warehouse types, customer groups,
+territories, price lists) and does nothing on a site already set up.
 
 ## Releasing
 

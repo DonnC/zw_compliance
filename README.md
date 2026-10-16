@@ -237,7 +237,7 @@ Endpoints: `fiscalise_invoice`, `create_credit_note`, `get_receipt`,
   - outages, lost answers and 5xx retries;
   - permissions, print formats, reports and the remote API.
 - **End to end.** A full cycle over real HTTPS with mutual TLS against the [zimra-fdms](https://github.com/munashe-chivandire/zimra-fdms) simulator.
-- **CI** runs all of the above on ERPNext v15 and v16 ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+- **CI** runs all of the above on ERPNext v16 ([.github/workflows/ci.yml](.github/workflows/ci.yml); started manually for now).
 
 Every specification rule and where it is enforced and tested:
 [docs/COMPLIANCE.md](docs/COMPLIANCE.md).

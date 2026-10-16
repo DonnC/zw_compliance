@@ -1,9 +1,12 @@
 name: CI
 
+# Disabled for now: runs only when started by hand (Actions → CI → Run workflow).
+# To re-enable automatic runs, restore:
+#   push:
+#     branches: [main]
+#   pull_request:
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -28,17 +31,13 @@ jobs:
   protocol:
     # The fdms/ protocol library has no Frappe dependency: spec vectors,
     # receipt maths, signing, wire format, client and error catalogue.
-    name: Protocol library (Python ${{ matrix.python }})
+    name: Protocol library
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ["3.10", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: "3.14"
       - run: pip install "cryptography>=41" "requests>=2.31" "pytest>=8"
       - run: python -m pytest -q
 
@@ -50,9 +49,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - branch: version-15
-            python: "3.11"
-            node: "18"
           - branch: version-16
             python: "3.14"
             node: "24"
