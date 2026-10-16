@@ -5,3 +5,4 @@
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
 zw_compliance.patches.v1_0.migrate_legacy_zimra_fields
+zw_compliance.patches.v1_0.reports_without_total_row

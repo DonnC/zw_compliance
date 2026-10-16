@@ -10,6 +10,7 @@ frappe.query_reports["ZIMRA Fiscalisation Reconciliation"] = {
 	],
 	formatter(value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
+		if (!data) return value; // filter and total rows have no data
 		if (column.fieldname === "issue" && data && data.issue) {
 			value = `<span class="text-danger">${value}</span>`;
 		}

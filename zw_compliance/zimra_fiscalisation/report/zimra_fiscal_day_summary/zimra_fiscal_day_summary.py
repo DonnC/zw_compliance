@@ -30,15 +30,15 @@ def columns():
 			"options": "Zimra Fiscal Device",
 			"width": 110,
 		},
-		{"label": _("Day No"), "fieldname": "fiscal_day_no", "fieldtype": "Int", "width": 70},
+		{"label": _("Day No"), "fieldname": "fiscal_day_no", "fieldtype": "Int", "width": 80},
 		{"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 110},
-		{"label": _("Opened"), "fieldname": "fiscal_day_opened", "fieldtype": "Datetime", "width": 150},
+		{"label": _("Opened"), "fieldname": "fiscal_day_opened", "fieldtype": "Datetime", "width": 175},
 		{
 			"label": _("Currency"),
 			"fieldname": "currency",
 			"fieldtype": "Link",
 			"options": "Currency",
-			"width": 80,
+			"width": 90,
 		},
 		{"label": _("ZIMRA Tax"), "fieldname": "tax", "fieldtype": "Data", "width": 160},
 		{

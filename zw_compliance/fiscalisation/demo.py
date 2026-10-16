@@ -78,6 +78,13 @@ def seed(days: int = 21, seed_value: int = 2026) -> None:
 		taxpayer_name="ZW Demo Traders (Private) Limited",
 		taxpayer_tin="2000123450",
 		branch_name="Harare Head Office",
+		branch_address={
+			"province": "Harare",
+			"city": "Harare",
+			"street": "Kwame Nkrumah Ave",
+			"houseNo": "48",
+		},
+		branch_contacts={"phoneNo": "+263 242 700 123", "email": "accounts@zwdemotraders.co.zw"},
 		vat_number="220012345",
 	)
 	fdms.clock = clock

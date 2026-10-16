@@ -14,6 +14,7 @@ frappe.query_reports["ZIMRA Fiscal Receipt Register"] = {
 	],
 	formatter(value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
+		if (!data) return value; // filter and total rows have no data
 		const colours = { Red: "red", Grey: "gray", Yellow: "orange", Rejected: "red", Retrying: "orange", Queued: "blue", Submitted: "green" };
 		if (["worst_colour", "sync_status"].includes(column.fieldname) && colours[data[column.fieldname]]) {
 			value = `<span class="indicator-pill ${colours[data[column.fieldname]]}">${value}</span>`;

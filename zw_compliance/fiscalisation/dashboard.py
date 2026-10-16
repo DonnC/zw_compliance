@@ -113,7 +113,7 @@ def fiscal_day_hours_left(filters=None) -> dict | str:
 			left.append(max((end - now_datetime()).total_seconds() / 3600, 0))
 	if not left:
 		return NO_DATA
-	return {"value": flt(min(left), 1), "fieldtype": "Float", "route": ["List", DAY]}
+	return {"value": flt(min(left), 1), "fieldtype": "Float", "precision": 1, "route": ["List", DAY]}
 
 
 # -- chart sources ----------------------------------------------------------------

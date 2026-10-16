@@ -17,6 +17,11 @@ and reports. There is no middleware service to run.
 | **Platform** | Frappe / ERPNext v15 and v16 |
 | **Licence** | MIT |
 | **Status** | Fiscalisation complete; payroll (PAYE, NSSA, ZIMDEF) next, see [Roadmap](#roadmap) |
+| **Maintainer** | [Donald Chinhuru (@DonnC)](https://github.com/DonnC) |
+
+<p align="center">
+  <img src="docs/media/fiscalization-workspace.png" alt="ZIMRA Fiscalisation workspace: compliance health cards, attention lists and fiscal sales" width="900">
+</p>
 
 ---
 
@@ -24,6 +29,7 @@ and reports. There is no middleware service to run.
 
 - [What it does](#what-it-does)
 - [How it works](#how-it-works)
+- [Screenshots](#screenshots)
 - [See it with demo data](#see-it-with-demo-data)
 - [Install](#install)
 - [Set up a fiscal device (10 minutes)](#set-up-a-fiscal-device-10-minutes)
@@ -118,6 +124,24 @@ within seconds of submit. When it is not, invoicing carries on. Receipts are
 already signed and printable, and they queue until the connection returns.
 Because order is enforced, the queue drains without gaps or duplicates (§4.7).
 
+## Screenshots
+
+What ZIMRA requires on paper (§10), produced from ERPNext:
+
+| A4 fiscal tax invoice | 80 mm receipt (Receipt48) | Z report |
+|:---:|:---:|:---:|
+| <img src="docs/media/invoice-a4.png" alt="Fiscal tax invoice, A4" width="300"> | <img src="docs/media/receipt48.png" alt="Fiscal receipt, 80 mm" width="230"> | <img src="docs/media/z-report.png" alt="Z report with totals per currency and tax" width="210"> |
+
+And what the business sees in ERPNext:
+
+| | |
+|:---:|:---:|
+| <img src="docs/media/fiscal-receipt-reg-report.png" alt="Fiscal Receipt Register report"><br>**Fiscal Receipt Register**: every receipt with its ZIMRA status | <img src="docs/media/fiscal-recon-report.png" alt="Fiscalisation Reconciliation report"><br>**Fiscalisation Reconciliation**: each invoice against its receipt |
+| <img src="docs/media/vat-summary-report.png" alt="VAT Summary report"><br>**VAT Summary**: output against input VAT, per tax and currency | <img src="docs/media/fiscal-day-summary-report.png" alt="Fiscal Day Summary report"><br>**Fiscal Day Summary**: totals per day, tax and currency |
+| <img src="docs/media/fiscal-device.png" alt="Fiscal device form"><br>**Fiscal device**: guided set-up and live status | <img src="docs/media/zimra-tax-mapping.png" alt="ZIMRA tax mapping"><br>**Tax mapping**: ZIMRA taxes tied to ERPNext accounts and templates |
+
+All screenshots use the [demo data](#see-it-with-demo-data).
+
 ## See it with demo data
 
 No ZIMRA connection needed: the demo replays three weeks of trading through
@@ -130,14 +154,14 @@ bench --site <site> execute zw_compliance.fiscalisation.demo.seed   # ZW Demo Tr
 bench --site <site> execute zw_compliance.fiscalisation.demo.wipe   # removes all of it
 ```
 
-Then open the **ZIMRA Fiscalisation** workspace and pick the company *ZW Demo Traders*.
+Then switch to the company *ZW Demo Traders* (avatar menu → **Session Defaults**) and open the **ZIMRA Fiscalisation** workspace.
 
 ## Install
 
 Requires ERPNext v15 or v16.
 
 ```bash
-bench get-app https://github.com/<your-org>/zw_compliance
+bench get-app https://github.com/DonnC/zw_compliance
 bench --site <site> install-app zw_compliance
 ```
 

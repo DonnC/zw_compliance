@@ -234,8 +234,17 @@ class FakeFdms:
 		taxpayer_name: str = "Simulated Taxpayer",
 		taxpayer_tin: str = "2000000000",
 		branch_name: str = "Simulator Branch",
+		branch_address: dict | None = None,
+		branch_contacts: dict | None = None,
 	):
 		self.taxpayer_name, self.taxpayer_tin, self.branch_name = taxpayer_name, taxpayer_tin, branch_name
+		self.branch_address = branch_address or {
+			"province": "Harare",
+			"city": "Harare",
+			"street": "Samora Machel Ave",
+			"houseNo": "1",
+		}
+		self.branch_contacts = branch_contacts or {"phoneNo": "0242000000", "email": "sim@example.invalid"}
 		self.ca = SimulatorCa()
 		self.devices: dict[int, SimDevice] = {}
 		self.faults = Faults()
@@ -358,13 +367,8 @@ class FakeFdms:
 			"taxPayerTIN": self.taxpayer_tin,
 			**({"vatNumber": self.vat_number} if self.vat_number else {}),
 			"deviceBranchName": self.branch_name,
-			"deviceBranchAddress": {
-				"province": "Harare",
-				"city": "Harare",
-				"street": "Samora Machel Ave",
-				"houseNo": "1",
-			},
-			"deviceBranchContacts": {"phoneNo": "0242000000", "email": "sim@example.invalid"},
+			"deviceBranchAddress": self.branch_address,
+			"deviceBranchContacts": self.branch_contacts,
 		}
 
 	def _verify_taxpayer(self, device_id, body, op):
