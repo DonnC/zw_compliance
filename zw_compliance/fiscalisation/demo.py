@@ -34,6 +34,7 @@ PREFIX = "ZW Demo"
 ZWG_RATE = 26.75  # ZWG per USD, demo only
 CASH, ECOCASH = f"{PREFIX} Cash", f"{PREFIX} EcoCash"
 POS_PROFILE = f"{PREFIX} Till"
+CUSTOMER_GROUP = f"{PREFIX} Customers"
 
 CUSTOMERS = [
 	# name, TIN, VAT number, billing currency
@@ -148,12 +149,20 @@ def _masters() -> None:
 			"account_currency": "ZWG",
 		}
 	).insert(ignore_permissions=True)
+	frappe.get_doc(
+		{
+			"doctype": "Customer Group",
+			"customer_group_name": CUSTOMER_GROUP,
+			"parent_customer_group": "All Customer Groups",
+			"is_group": 0,
+		}
+	).insert(ignore_permissions=True)
 	for name, tin, vat, currency in CUSTOMERS:
 		customer = frappe.get_doc(
 			{
 				"doctype": "Customer",
 				"customer_name": name,
-				"customer_group": "All Customer Groups",
+				"customer_group": CUSTOMER_GROUP,
 				"territory": "All Territories",
 				"customer_type": "Company" if tin else "Individual",
 				"tax_id": tin,
@@ -431,6 +440,8 @@ def wipe() -> None:
 		_delete(doctype, {"company": COMPANY})
 	for customer in frappe.get_all("Customer", filters={"name": ["like", f"{PREFIX} %"]}, pluck="name"):
 		frappe.delete_doc("Customer", customer, ignore_permissions=True, force=True)
+	if frappe.db.exists("Customer Group", CUSTOMER_GROUP):
+		frappe.delete_doc("Customer Group", CUSTOMER_GROUP, ignore_permissions=True, force=True)
 	for mode in (CASH, ECOCASH):
 		if frappe.db.exists("Mode of Payment", mode):
 			frappe.delete_doc("Mode of Payment", mode, ignore_permissions=True, force=True)

@@ -24,8 +24,31 @@ def after_install() -> None:
 def after_migrate() -> None:
 	make_roles()
 	make_custom_fields()
+	ensure_currencies()
 	seed_settings()
 	seed_hs_codes()
+
+
+ZWG = {
+	"doctype": "Currency",
+	"currency_name": "ZWG",
+	"enabled": 1,
+	"fraction": "Cent",
+	"fraction_units": 100,
+	"symbol": "ZiG",
+	"number_format": "#,###.##",
+	"smallest_currency_fraction_value": 0.01,
+}
+
+
+def ensure_currencies() -> None:
+	"""Create ZWG (Zimbabwe Gold, in use since April 2024) when it is missing.
+
+	Frappe's currency list still knows Zimbabwe's currency as ZWL, but ZIMRA
+	receipts in local currency use ZWG. An existing ZWG record is left as the
+	business configured it."""
+	if not frappe.db.exists("Currency", "ZWG"):
+		frappe.get_doc(ZWG).insert(ignore_permissions=True)
 
 
 def before_uninstall() -> None:

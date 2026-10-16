@@ -61,13 +61,30 @@ def ensure_company() -> None:
 	).insert(ignore_permissions=True)
 
 
+CUSTOMER_GROUP = "_Test ZW Customers"
+
+
+def ensure_customer_group() -> str:
+	"""A non-group customer group: ERPNext v16 refuses group ones on customers."""
+	if not frappe.db.exists("Customer Group", CUSTOMER_GROUP):
+		frappe.get_doc(
+			{
+				"doctype": "Customer Group",
+				"customer_group_name": CUSTOMER_GROUP,
+				"parent_customer_group": "All Customer Groups",
+				"is_group": 0,
+			}
+		).insert(ignore_permissions=True)
+	return CUSTOMER_GROUP
+
+
 def ensure_customer(name: str, tax_id: str | None = None, vat: str | None = None) -> str:
 	if not frappe.db.exists("Customer", name):
 		frappe.get_doc(
 			{
 				"doctype": "Customer",
 				"customer_name": name,
-				"customer_group": "All Customer Groups",
+				"customer_group": ensure_customer_group(),
 				"territory": "All Territories",
 				"tax_id": tax_id,
 				"zimra_vat_number": vat,
