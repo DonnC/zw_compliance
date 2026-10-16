@@ -319,7 +319,14 @@ class TestPosInvoice(FiscalisationTestCase):
 
 		before = frappe.db.count("Zimra Fiscal Receipt")
 		log = frappe.new_doc("POS Invoice Merge Log")
-		log.update({"posting_date": frappe.utils.today(), "customer": WALK_IN, "company": COMPANY})
+		log.update(
+			{
+				"posting_date": frappe.utils.today(),
+				"posting_time": frappe.utils.nowtime(),  # mandatory on ERPNext v16
+				"customer": WALK_IN,
+				"company": COMPANY,
+			}
+		)
 		log.append(
 			"pos_invoices",
 			{

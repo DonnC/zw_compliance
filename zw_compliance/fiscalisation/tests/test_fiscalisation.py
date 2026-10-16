@@ -342,17 +342,20 @@ class TestRemoteApiOverHttp(FiscalisationTestCase):
 	"""Through Frappe's request dispatch: whitelisting, HTTP method, argument parsing."""
 
 	def _call(self, method: str, http_method: str, **params):
-		from types import SimpleNamespace
-
 		from frappe.handler import execute_cmd
+		from werkzeug.test import EnvironBuilder
 
 		request, form_dict = getattr(frappe.local, "request", None), frappe.local.form_dict
-		frappe.local.request = SimpleNamespace(method=http_method)
+		frappe.local.request = EnvironBuilder(method=http_method, path="/api/method/" + method).get_request()
 		frappe.local.form_dict = frappe._dict(params)
 		try:
-			return execute_cmd(f"zw_compliance.api.v1.fiscalisation.{method}")
+			out = execute_cmd(f"zw_compliance.api.v1.fiscalisation.{method}")
 		finally:
 			frappe.local.request, frappe.local.form_dict = request, form_dict
+		if isinstance(out, dict) and out.get("error", {}).get("code") == "INTERNAL_ERROR":
+			# surface the logged traceback in the failure message
+			out["error"]["traceback"] = frappe.get_last_doc("Error Log").error
+		return out
 
 	def test_form_encoded_sale_is_fiscalised(self):
 		out = self._call(

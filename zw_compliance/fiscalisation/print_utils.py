@@ -12,6 +12,7 @@ from decimal import Decimal
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 from markupsafe import Markup
 
 from zw_compliance.fdms.money import q2
@@ -150,12 +151,21 @@ def zimra_z_report(day) -> dict:
 				{"SaleByTax": "sales", "CreditNoteByTax": "credit", "DebitNoteByTax": "debit"}[c.counter_type]
 			] += c.value
 
-	documents = frappe.get_all(
+	# Aggregated here rather than with SQL functions in ``fields``: Frappe v16
+	# rejects those strings and v15 lacks the dict syntax that replaces them.
+	totals: dict[tuple, frappe._dict] = {}
+	for r in frappe.get_all(
 		RECEIPT,
 		filters={"fiscal_day": day.name, "sync_status": ["!=", REJECTED]},
-		fields=["receipt_currency", "receipt_type", "count(name) as qty", "sum(receipt_total) as total"],
-		group_by="receipt_currency, receipt_type",
-	)
+		fields=["receipt_currency", "receipt_type", "receipt_total"],
+	):
+		row = totals.setdefault(
+			(r.receipt_currency, r.receipt_type),
+			frappe._dict(receipt_currency=r.receipt_currency, receipt_type=r.receipt_type, qty=0, total=0),
+		)
+		row.qty += 1
+		row.total = flt(row.total + flt(r.receipt_total), 2)
+	documents = list(totals.values())
 	currencies = []
 	for currency in sorted(
 		set(by_currency) | {d.receipt_currency for d in documents}
