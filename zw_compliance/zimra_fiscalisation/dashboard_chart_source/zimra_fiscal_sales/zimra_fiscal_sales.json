@@ -1,0 +1,13 @@
+{
+ "creation": "2026-10-16 09:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart Source",
+ "idx": 0,
+ "modified": "2026-10-16 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "ZIMRA Fiscal Sales",
+ "owner": "Administrator",
+ "source_name": "ZIMRA Fiscal Sales",
+ "timeseries": 0
+}

@@ -1,0 +1,20 @@
+{
+ "creation": "2026-10-16 09:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "dynamic_filters_json": "{\"company\": \"frappe.defaults.get_user_default(\\\"Company\\\")\"}",
+ "filters_json": "{}",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "ZIMRA Unfiscalised Invoices",
+ "method": "zw_compliance.fiscalisation.dashboard.unfiscalised_invoices",
+ "modified": "2026-10-16 19:45:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "ZIMRA Unfiscalised Invoices",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Custom"
+}

@@ -1,0 +1,51 @@
+{#- Z report / X report, spec v7.2 §10.4 - §10.5. Expects `zr` = zimra_z_report(doc). -#}
+{%- from "zw_compliance/templates/zimra/_macros.html" import money, fdate -%}
+{%- set d = zr.device -%}
+<div class="zimra-r48">
+	<div class="c b">{{ d.taxpayer_name }}</div>{# [1] #}
+	<div class="c">TIN: {{ d.taxpayer_tin }}</div>{# [2] #}
+	{% if d.vat_number %}<div class="c">VAT No: {{ d.vat_number }}</div>{% endif %}{# [3] #}
+	{% if d.branch_name and d.branch_name != d.taxpayer_name %}<div class="c">{{ d.branch_name }}</div>{% endif %}{# [4] #}
+	{% if d.branch_address %}<div class="c">{{ d.branch_address }}</div>{% endif %}{# [5] #}
+	{% if d.branch_email %}<div class="c">{{ d.branch_email }}</div>{% endif %}{# [6] #}
+	{% if d.branch_phone %}<div class="c">{{ d.branch_phone }}</div>{% endif %}{# [7] #}
+	<div class="rule"></div>
+	<div class="c b">{{ zr.title }}</div>{# [8] #}
+	<div class="rule"></div>
+	<div>Fiscal day No: {{ zr.day.fiscal_day_no }}</div>{# [9] #}
+	<div>Fiscal day opened: {{ fdate(zr.day.fiscal_day_opened) }}</div>{# [10] #}
+	{% if zr.day.status == "Closed" %}<div>Fiscal day closed: {{ fdate(zr.day.fiscal_day_closed) }}</div>{% endif %}{# [11] #}
+	<div>Device Serial No: {{ d.serial_no }}</div>{# [12] #}
+	<div>Device Id: {{ d.device_id }}</div>{# [13] #}
+	<div class="rule"></div>
+	<div class="c b">Daily totals</div>{# [14] #}
+	{% for c in zr.currencies %}
+		<div class="rule"></div>
+		<div class="c b">{{ c.currency }}</div>{# [15] #}
+		<div class="rule"></div>
+		<div class="b">Total net sales</div>{# [16]-[20] #}
+		{% for t in c.taxes %}<div class="row"><span>Net, {{ t.name }}</span><span>{{ money(t.net) }}</span></div>{% endfor %}
+		<div class="row b"><span>Total net amount</span><span>{{ money(c.total_net) }}</span></div>
+		{% if c.taxed %}
+			<div class="rule"></div>
+			<div class="b">Total taxes</div>{# [21]-[25] #}
+			{% for t in c.taxed %}<div class="row"><span>Tax, {{ t.name }}</span><span>{{ money(t.tax) }}</span></div>{% endfor %}
+			<div class="row b"><span>Total tax amount</span><span>{{ money(c.total_tax) }}</span></div>
+		{% endif %}
+		<div class="rule"></div>
+		<div class="b">Total gross sales</div>{# [26]-[30] #}
+		{% for t in c.taxes %}<div class="row"><span>Total, {{ t.name }}</span><span>{{ money(t.gross) }}</span></div>{% endfor %}
+		<div class="row b"><span>Total gross amount</span><span>{{ money(c.total_gross) }}</span></div>
+		<div class="rule"></div>
+		<div class="row b"><span>Documents</span><span>Quantity</span><span>Total amount</span></div>{# [31]-[45] #}
+		{% for label, count, amount in c.documents %}<div class="row"><span>{{ label }}</span><span>{{ count }}</span><span>{{ money(amount) }}</span></div>{% endfor %}
+		<div class="row b"><span>Total documents</span><span>{{ c.total_documents }}</span><span>{{ money(c.total_documents_amount) }}</span></div>
+		<div class="rule"></div>
+	{% endfor %}
+</div>
+<style>
+	.zimra-r48 { font-family: "Courier New", monospace; font-size: 11px; width: 72mm; margin: 0 auto; line-height: 1.35; }
+	.zimra-r48 .c { text-align: center; } .zimra-r48 .b { font-weight: bold; }
+	.zimra-r48 .row { display: flex; justify-content: space-between; gap: 6px; }
+	.zimra-r48 .rule { border-top: 1px dashed #000; margin: 3px 0; }
+</style>

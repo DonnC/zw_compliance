@@ -1,239 +1,82 @@
 app_name = "zw_compliance"
 app_title = "Zimbabwe Compliance"
 app_publisher = "Donald Chinhuru"
-app_description = "A Frappe|ERPNext compliance app for the Zimbabwean businesses"
+app_description = (
+	"Zimbabwe compliance for ERPNext: ZIMRA fiscalisation, with payroll and statutory returns to follow"
+)
 app_email = "donnclab@gmail.com"
 app_license = "mit"
 
-# Apps
-# ------------------
+required_apps = ["erpnext"]
 
-# required_apps = []
+app_logo_url = "/assets/zw_compliance/images/logo.svg"
 
-# Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "zw_compliance",
-# 		"logo": "/assets/zw_compliance/logo.png",
-# 		"title": "Zimbabwe Compliance",
-# 		"route": "/zw_compliance",
-# 		"has_permission": "zw_compliance.api.permission.has_app_permission"
-# 	}
-# ]
-
-# Includes in <head>
-# ------------------
-
-# include js, css files in header of desk.html
-# app_include_css = "/assets/zw_compliance/css/zw_compliance.css"
-# app_include_js = "/assets/zw_compliance/js/zw_compliance.js"
-
-# include js, css files in header of web template
-# web_include_css = "/assets/zw_compliance/css/zw_compliance.css"
-# web_include_js = "/assets/zw_compliance/js/zw_compliance.js"
-
-# include custom scss in every website theme (without file extension ".scss")
-# website_theme_scss = "zw_compliance/public/scss/website"
-
-# include js, css files in header of web form
-# webform_include_js = {"doctype": "public/js/doctype.js"}
-# webform_include_css = {"doctype": "public/css/doctype.css"}
-
-# include js in page
-# page_js = {"page" : "public/js/file.js"}
-
-# include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
-# doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
-# doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
-
-# Svg Icons
-# ------------------
-# include app icons in desk
-# app_include_icons = "zw_compliance/public/icons.svg"
-
-# Home Pages
-# ----------
-
-# application home page (will override Website Settings)
-# home_page = "login"
-
-# website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
-
-# Generators
-# ----------
-
-# automatically create page for each record of this doctype
-# website_generators = ["Web Page"]
-
-# automatically load and sync documents of this doctype from downstream apps
-# importable_doctypes = [doctype_1]
-
-# Jinja
-# ----------
-
-# add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "zw_compliance.utils.jinja_methods",
-# 	"filters": "zw_compliance.utils.jinja_filters"
-# }
+add_to_apps_screen = [
+	{
+		"name": app_name,
+		"logo": "/assets/zw_compliance/images/logo.svg",
+		"title": app_title,
+		"route": "/app/zimra-fiscalisation",
+		"has_permission": "zw_compliance.permissions.check_app_permission",
+	}
+]
 
 # Installation
 # ------------
 
-# before_install = "zw_compliance.install.before_install"
-# after_install = "zw_compliance.install.after_install"
-
-# Uninstallation
-# ------------
-
-# before_uninstall = "zw_compliance.uninstall.before_uninstall"
-# after_uninstall = "zw_compliance.uninstall.after_uninstall"
-
-# Integration Setup
-# ------------------
-# To set up dependencies/integrations with other apps
-# Name of the app being installed is passed as an argument
-
-# before_app_install = "zw_compliance.utils.before_app_install"
-# after_app_install = "zw_compliance.utils.after_app_install"
-
-# Integration Cleanup
-# -------------------
-# To clean up dependencies/integrations with other apps
-# Name of the app being uninstalled is passed as an argument
-
-# before_app_uninstall = "zw_compliance.utils.before_app_uninstall"
-# after_app_uninstall = "zw_compliance.utils.after_app_uninstall"
-
-# Desk Notifications
-# ------------------
-# See frappe.core.notifications.get_notification_config
-
-# notification_config = "zw_compliance.notifications.get_notification_config"
-
-# Permissions
-# -----------
-# Permissions evaluated in scripted ways
-
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
-
-# Document Events
-# ---------------
-# Hook on document methods and events
-
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
-
-# Scheduled Tasks
-# ---------------
-
-# scheduler_events = {
-# 	"all": [
-# 		"zw_compliance.tasks.all"
-# 	],
-# 	"daily": [
-# 		"zw_compliance.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"zw_compliance.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"zw_compliance.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"zw_compliance.tasks.monthly"
-# 	],
-# }
+after_install = "zw_compliance.fiscalisation.setup.install.after_install"
+after_migrate = "zw_compliance.fiscalisation.setup.install.after_migrate"
+before_uninstall = "zw_compliance.fiscalisation.setup.install.before_uninstall"
 
 # Testing
 # -------
 
-# before_tests = "zw_compliance.install.before_tests"
+before_tests = "zw_compliance.testing.before_tests"
 
-# Overriding Methods
-# ------------------------------
-#
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "zw_compliance.event.get_events"
-# }
-#
-# each overriding function accepts a `data` argument;
-# generated from the base implementation of the doctype dashboard,
-# along with any modifications made in other Frappe apps
-# override_doctype_dashboards = {
-# 	"Task": "zw_compliance.task.get_dashboard_data"
-# }
+# Document Events
+# ---------------
 
-# exempt linked doctypes from being automatically cancelled
-#
-# auto_cancel_exempted_doctypes = ["Auto Repeat"]
+_fiscal_invoice_events = {
+	"before_insert": "zw_compliance.fiscalisation.guards.clear_fiscal_fields",
+	"validate": "zw_compliance.fiscalisation.validation.validate_invoice",
+	"before_submit": "zw_compliance.fiscalisation.validation.before_submit",
+	"on_submit": "zw_compliance.fiscalisation.outbox.fiscalise",
+	"before_cancel": "zw_compliance.fiscalisation.guards.prevent_cancel",
+	"on_cancel": "zw_compliance.fiscalisation.guards.prevent_cancel",
+	"on_trash": "zw_compliance.fiscalisation.guards.prevent_delete",
+}
 
-# Ignore links to specified DocTypes when deleting documents
-# -----------------------------------------------------------
+doc_events = {
+	"Sales Invoice": _fiscal_invoice_events,
+	"POS Invoice": _fiscal_invoice_events,
+}
 
-# ignore_links_on_delete = ["Communication", "ToDo"]
+# Desk
+# ----
 
-# Request Events
-# ----------------
-# before_request = ["zw_compliance.utils.before_request"]
-# after_request = ["zw_compliance.utils.after_request"]
+doctype_js = {
+	"Sales Invoice": "public/js/zimra_invoice.js",
+	"POS Invoice": "public/js/zimra_invoice.js",
+}
 
-# Job Events
-# ----------
-# before_job = ["zw_compliance.utils.before_job"]
-# after_job = ["zw_compliance.utils.after_job"]
+# Scheduled Tasks
+# ---------------
 
-# User Data Protection
-# --------------------
+scheduler_events = {
+	"cron": {
+		"* * * * *": ["zw_compliance.fiscalisation.schedule.every_minute"],
+		"*/5 * * * *": ["zw_compliance.fiscalisation.schedule.every_five_minutes"],
+	},
+	"daily": ["zw_compliance.fiscalisation.schedule.daily"],
+}
 
-# user_data_fields = [
-# 	{
-# 		"doctype": "{doctype_1}",
-# 		"filter_by": "{filter_by}",
-# 		"redact_fields": ["{field_1}", "{field_2}"],
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_2}",
-# 		"filter_by": "{filter_by}",
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_3}",
-# 		"strict": False,
-# 	},
-# 	{
-# 		"doctype": "{doctype_4}"
-# 	}
-# ]
+# Jinja (print formats)
+# ---------------------
 
-# Authentication and authorization
-# --------------------------------
-
-# auth_hooks = [
-# 	"zw_compliance.auth.validate"
-# ]
-
-# Automatically update python controller files with type annotations for this app.
-# export_python_type_annotations = True
-
-# default_log_clearing_doctypes = {
-# 	"Logging DocType Name": 30  # days to retain logs
-# }
-
+jinja = {
+	"methods": [
+		"zw_compliance.fiscalisation.print_utils.zimra_fiscal_receipt",
+		"zw_compliance.fiscalisation.print_utils.zimra_qr_svg",
+		"zw_compliance.fiscalisation.print_utils.zimra_z_report",
+	],
+}

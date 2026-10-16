@@ -1,0 +1,6 @@
+{%- set z = zimra_fiscal_receipt(doc) -%}
+{% if doc.receipt_print_form == "Receipt48" %}
+{% include "zw_compliance/templates/zimra/receipt48.html" %}
+{% else %}
+{% include "zw_compliance/templates/zimra/invoice_a4.html" %}
+{% endif %}
