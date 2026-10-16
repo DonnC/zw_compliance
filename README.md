@@ -1,4 +1,12 @@
-# Zimbabwe Compliance for ERPNext
+<p align="center">
+  <img src="zw_compliance/public/images/logo.svg" alt="Zimbabwe Compliance logo" width="96">
+</p>
+
+<h1 align="center">Zimbabwe Compliance for ERPNext</h1>
+
+<p align="center">
+  <img src="docs/media/social-preview.png" alt="ZIMRA fiscalisation inside ERPNext: a fiscal tax invoice and an 80 mm receipt, both with QR verification codes" width="900">
+</p>
 
 `zw_compliance` makes ERPNext compliant with Zimbabwean tax law, starting with
 **ZIMRA fiscalisation**. The ERPNext site registers with ZIMRA's Fiscalisation
@@ -14,14 +22,10 @@ and reports. There is no middleware service to run.
 | | |
 |---|---|
 | **Specification** | ZIMRA *Fiscal Device Gateway API* v7.2 (online mode) |
-| **Platform** | Frappe / ERPNext v15 and v16 |
+| **Platform** | Frappe / ERPNext v15+ |
 | **Licence** | MIT |
 | **Status** | Fiscalisation complete; payroll (PAYE, NSSA, ZIMDEF) next, see [Roadmap](#roadmap) |
 | **Maintainer** | [Donald Chinhuru (@DonnC)](https://github.com/DonnC) |
-
-<p align="center">
-  <img src="docs/media/fiscalization-workspace.png" alt="ZIMRA Fiscalisation workspace: compliance health cards, attention lists and fiscal sales" width="900">
-</p>
 
 ---
 
@@ -132,7 +136,11 @@ What ZIMRA requires on paper (§10), produced from ERPNext:
 |:---:|:---:|:---:|
 | <img src="docs/media/invoice-a4.png" alt="Fiscal tax invoice, A4" width="300"> | <img src="docs/media/receipt48.png" alt="Fiscal receipt, 80 mm" width="230"> | <img src="docs/media/z-report.png" alt="Z report with totals per currency and tax" width="210"> |
 
-And what the business sees in ERPNext:
+And what the business sees in ERPNext, starting with the workspace:
+
+<p align="center">
+  <img src="docs/media/fiscalization-workspace.png" alt="ZIMRA Fiscalisation workspace: compliance health cards, attention lists and fiscal sales" width="900">
+</p>
 
 | | |
 |:---:|:---:|
@@ -158,7 +166,7 @@ Then switch to the company *ZW Demo Traders* (avatar menu → **Session Defaults
 
 ## Install
 
-Requires ERPNext v15 or v16.
+Requires ERPNext v15 or later.
 
 ```bash
 bench get-app https://github.com/DonnC/zw_compliance

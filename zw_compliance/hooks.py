@@ -9,6 +9,18 @@ app_license = "mit"
 
 required_apps = ["erpnext"]
 
+app_logo_url = "/assets/zw_compliance/images/logo.svg"
+
+add_to_apps_screen = [
+	{
+		"name": app_name,
+		"logo": "/assets/zw_compliance/images/logo.svg",
+		"title": app_title,
+		"route": "/app/zimra-fiscalisation",
+		"has_permission": "zw_compliance.permissions.check_app_permission",
+	}
+]
+
 # Installation
 # ------------
 
