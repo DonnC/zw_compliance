@@ -1,15 +1,21 @@
 """Global receipt numbering.
 
-ZIMRA lets a device start its receiptGlobalNo again at 1 only with the first
-receipt of a new fiscal day (RCPT012 accepts 1 there). Each device chooses
-when that happens (``global_number_reset``); a restart is only ever applied
-when a new fiscal day is created, never mid-day.
+receiptGlobalNo is the cumulative number of receipts since the device was
+activated and continues despite fiscal day close (§9 req. 6). Only when it
+"becomes very big" may the taxpayer restart it at 1, with the first receipt of
+a new fiscal day (§9 req. 7; RCPT012 accepts 1 only there). So a restart is
+only ever applied when a new fiscal day is created, never mid-day.
 
 * Near Limit (default): numbers continue across days; the first new day after
   the last number passed 90% of the limit starts again at 1. Reaching the
-  limit during a day closes that day so the next receipt can restart.
-* Every Fiscal Day: every new day starts again at 1.
+  limit during a day closes that day (a normal close, allowed at any time) so
+  the next receipt can restart. With the default limit this never happens in
+  practice: numbering simply continues, as req. 6 describes.
 * Never: numbers never restart; at the limit invoices are refused.
+
+Restarting every fiscal day is deliberately not offered: RCPT012 would accept
+it, but it turns the global number into a second daily counter, contrary to
+req. 6 and to the "very big" condition of req. 7.
 """
 
 from __future__ import annotations
@@ -17,14 +23,18 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
-from .constants import GLOBAL_RESET_EVERY_DAY, GLOBAL_RESET_NEAR_LIMIT, GLOBAL_RESET_NEVER
+from .constants import GLOBAL_RESET_NEAR_LIMIT, GLOBAL_RESET_NEVER
 
 # receiptGlobalNo is an int in the API: the largest number a receipt can carry.
 MAX_GLOBAL_NO = 2**31 - 1
 
 
 def reset_policy(device) -> str:
-	return device.get("global_number_reset") or GLOBAL_RESET_NEAR_LIMIT
+	return (
+		GLOBAL_RESET_NEVER
+		if device.get("global_number_reset") == GLOBAL_RESET_NEVER
+		else GLOBAL_RESET_NEAR_LIMIT
+	)
 
 
 def limit(device) -> int:
@@ -38,15 +48,9 @@ def at_limit(device) -> bool:
 
 def restarts_in_new_day(device) -> bool:
 	"""Whether the next new fiscal day starts global numbering again at 1."""
-	last = device.last_receipt_global_no or 0
-	policy = reset_policy(device)
-	if policy == GLOBAL_RESET_NEVER:
+	if reset_policy(device) == GLOBAL_RESET_NEVER:
 		return False
-	if at_limit(device):
-		return True
-	if policy == GLOBAL_RESET_EVERY_DAY:
-		return last > 0
-	return last * 10 > limit(device) * 9
+	return (device.last_receipt_global_no or 0) * 10 > limit(device) * 9
 
 
 def require_number_available(device) -> None:

@@ -189,15 +189,15 @@
    "fieldname": "numbering_section",
    "fieldtype": "Section Break",
    "label": "Receipt Numbering",
-   "description": "ZIMRA lets the global receipt number start again at 1 only with the first receipt of a new fiscal day, so a restart only ever happens there."
+   "description": "ZIMRA lets the global receipt number start again at 1 only when it becomes very big, and only with the first receipt of a new fiscal day, so a restart only ever happens there."
   },
   {
    "default": "Near Limit",
    "fieldname": "global_number_reset",
    "fieldtype": "Select",
    "label": "Global Number Reset",
-   "options": "Near Limit\nEvery Fiscal Day\nNever",
-   "description": "Near Limit: numbers continue across days and start again at 1 in the first new day after passing 90% of the limit; reaching the limit during a day closes the day so invoicing never stops. Every Fiscal Day: each new day starts at 1. Never: invoices are refused once the limit is reached."
+   "options": "Near Limit\nNever",
+   "description": "Global numbers continue across fiscal days. Near Limit: they start again at 1 in the first new day after passing 90% of the limit; reaching the limit during a day closes the day so invoicing never stops. Never: invoices are refused once the limit is reached."
   },
   {
    "fieldname": "column_break_numbering",
@@ -463,7 +463,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-17 12:26:45.901425",
+ "modified": "2026-10-17 12:36:29.598622",
  "modified_by": "Administrator",
  "module": "ZIMRA Fiscalisation",
  "name": "Zimra Fiscal Device",

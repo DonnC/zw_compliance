@@ -162,19 +162,23 @@ stateDiagram-v2
 
 ### Global receipt numbers
 
-Every receipt carries a global number that runs on across fiscal days. ZIMRA
-allows it to start again at 1 only with the first receipt of a new fiscal day,
-so ERPNext only ever restarts it there. Choose when on the fiscal device,
-under **Receipt Numbering**:
+Every receipt carries a global number that runs on across fiscal days, from
+the device's first receipt. ZIMRA allows it to start again at 1 only once it
+becomes very big, and only with the first receipt of a new fiscal day, so
+ERPNext only ever restarts it there. Choose how on the fiscal device, under
+**Receipt Numbering**:
 
 | Global Number Reset | The global number starts again at 1 |
 |---|---|
 | **Near Limit** (default) | In the first new fiscal day after it passes 90% of the limit. If the limit is reached during a day, that day is closed and the next sale opens a new one, so invoicing never stops. |
-| **Every Fiscal Day** | In every new fiscal day. |
 | **Never** | Never. Once the limit is reached, invoices are refused until the setting is changed. |
 
 **Global Number Limit** is blank by default, meaning the largest number a
-receipt can carry. Set it only if ZIMRA gives your device a lower limit.
+receipt can carry (2,147,483,647). Numbering then simply continues, as ZIMRA
+describes. Set a lower limit only if you want to restart earlier.
+
+Restarting every day is not offered: ZIMRA defines the global number as the
+running total of receipts since the device was activated.
 
 A receipt is identified by its fiscal day and global number together, so
 credit notes always point at the right original, before or after a restart.

@@ -24,7 +24,6 @@ DEVICE_DISABLED = "Disabled"
 
 # When a device's receipt global number starts again at 1 (Zimra Fiscal Device.global_number_reset)
 GLOBAL_RESET_NEAR_LIMIT = "Near Limit"
-GLOBAL_RESET_EVERY_DAY = "Every Fiscal Day"
 GLOBAL_RESET_NEVER = "Never"
 
 # Fiscal day lifecycle (Zimra Fiscal Day.status)

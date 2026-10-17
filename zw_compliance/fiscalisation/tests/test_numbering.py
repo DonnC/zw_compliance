@@ -28,12 +28,17 @@ class TestNumberingPolicy(UnitTestCase):
 		self.assertEqual(numbering.reset_policy(_device()), "Near Limit")
 		self.assertFalse(numbering.restarts_in_new_day(_device(limit=100, last=90)))
 		self.assertTrue(numbering.restarts_in_new_day(_device(limit=100, last=91)))
+		self.assertTrue(numbering.restarts_in_new_day(_device(limit=100, last=100)))
 		self.assertFalse(numbering.restarts_in_new_day(_device(last=1_000_000)))
 		self.assertTrue(numbering.restarts_in_new_day(_device(last=numbering.MAX_GLOBAL_NO)))
 
-	def test_every_fiscal_day_restarts_once_a_number_was_used(self):
-		self.assertTrue(numbering.restarts_in_new_day(_device("Every Fiscal Day", last=1)))
-		self.assertFalse(numbering.restarts_in_new_day(_device("Every Fiscal Day", last=0)))
+	def test_numbers_continue_across_days_with_the_default_limit(self):
+		self.assertFalse(numbering.restarts_in_new_day(_device(last=1)))
+		self.assertFalse(numbering.restarts_in_new_day(_device(last=1_900_000_000)))
+
+	def test_unknown_policies_are_treated_as_near_limit(self):
+		self.assertEqual(numbering.reset_policy(_device("Every Fiscal Day")), "Near Limit")
+		self.assertFalse(numbering.restarts_in_new_day(_device("Every Fiscal Day", last=1)))
 
 	def test_never_never_restarts_and_refuses_at_the_limit(self):
 		self.assertFalse(numbering.restarts_in_new_day(_device("Never", limit=10, last=10)))
@@ -64,10 +69,12 @@ class TestGlobalNumbering(FiscalisationTestCase):
 	def _last(self) -> int:
 		return frappe.db.get_value("Zimra Fiscal Device", self.device.name, "last_receipt_global_no") or 0
 
-	def _close_current_day(self):
-		day = frappe.db.get_value("Zimra Fiscal Device", self.device.name, "current_fiscal_day")
-		request_close(day)
-		self._settle()
+	def _sale(self):
+		return self.receipt_of(make_invoice([(ITEM, 1, 10)]))
+
+	def _restart_at_next_sale(self):
+		"""Put the device at its limit, so the next sale starts a new day at 1."""
+		self._set("Near Limit", self._last())
 
 	def _settle(self):
 		self.sync()
@@ -80,28 +87,41 @@ class TestGlobalNumbering(FiscalisationTestCase):
 			self.assertEqual(receipt.sync_status, "Submitted", receipt.last_error)
 			self.assertFalse(receipt.validation_errors, [e.as_dict() for e in receipt.validation_errors])
 
-	def test_every_fiscal_day_starts_each_new_day_at_one(self):
-		self._set("Every Fiscal Day", 0)
-		before = self.receipt_of(make_invoice([(ITEM, 1, 10)]))
-		self._close_current_day()
-		first = self.receipt_of(make_invoice([(ITEM, 1, 10)]))
-		second = self.receipt_of(make_invoice([(ITEM, 1, 10)]))
-		self.assertEqual((first.fiscal_day_no, first.receipt_global_no), (before.fiscal_day_no + 1, 1))
-		self.assertEqual(second.receipt_global_no, 2)
+	def test_numbers_continue_across_a_day_close_by_default(self):
+		first = self._sale()
+		request_close(first.fiscal_day)
+		self._settle()
+		nxt = self._sale()
+		self.assertEqual(nxt.fiscal_day_no, first.fiscal_day_no + 1)
+		self.assertEqual(nxt.receipt_global_no, first.receipt_global_no + 1)
+
+	def test_near_limit_restarts_in_the_first_new_day_past_ninety_percent(self):
+		first = self._sale()
+		self._set("Near Limit", first.receipt_global_no + 1)  # first is past 90% of the limit
+		same_day = self._sale()
+		self.assertEqual(
+			(same_day.fiscal_day_no, same_day.receipt_global_no),
+			(first.fiscal_day_no, first.receipt_global_no + 1),
+		)
+		request_close(first.fiscal_day)
+		self._settle()
+		restarted = self._sale()
+		self.assertEqual((restarted.fiscal_day_no, restarted.receipt_global_no), (first.fiscal_day_no + 1, 1))
 		self.sync()
-		self._assert_accepted(before, first, second)
+		self._assert_accepted(first, same_day, restarted)
 
 	def test_reaching_the_limit_mid_day_closes_the_day_and_restarts(self):
-		self.receipt_of(make_invoice([(ITEM, 1, 10)]))
+		self._sale()
 		self._set("Near Limit", self._last() + 1)
-		at_limit = self.receipt_of(make_invoice([(ITEM, 1, 10)]))
-		restarted = self.receipt_of(make_invoice([(ITEM, 1, 10)]))
+		at_limit = self._sale()
+		restarted = self._sale()
 		self.assertEqual(restarted.receipt_global_no, 1)
 		self.assertEqual(restarted.receipt_counter, 1)
 		self.assertEqual(restarted.fiscal_day_no, at_limit.fiscal_day_no + 1)
 		self.assertFalse(json.loads(restarted.payload).get("previousReceiptHash"))
-		old_day = frappe.get_doc("Zimra Fiscal Day", at_limit.fiscal_day)
-		self.assertEqual(old_day.status, "Close Requested")
+		self.assertEqual(
+			frappe.db.get_value("Zimra Fiscal Day", at_limit.fiscal_day, "status"), "Close Requested"
+		)
 
 		self._settle()  # old day's receipts, its close, then the new day
 		self.sync()
@@ -111,12 +131,12 @@ class TestGlobalNumbering(FiscalisationTestCase):
 	def test_a_credit_note_after_a_restart_refers_to_the_original_day(self):
 		from erpnext.controllers.sales_and_purchase_return import make_return_doc
 
-		self._set("Every Fiscal Day", 0)
 		invoice = make_invoice([(ITEM, 1, 10)])
 		original = self.receipt_of(invoice)
-		self.sync()
-		self._close_current_day()
-		self.receipt_of(make_invoice([(ITEM, 1, 10)]))  # global number 1 again, in the new day
+		self._restart_at_next_sale()
+		self.assertEqual(self._sale().receipt_global_no, 1)
+		self._set(None, 0)
+		self._settle()
 
 		note = make_return_doc("Sales Invoice", invoice.name)
 		note.zimra_receipt_notes = "Goods returned"
@@ -133,18 +153,17 @@ class TestGlobalNumbering(FiscalisationTestCase):
 		self._assert_accepted(credit)
 
 	def test_never_refuses_at_the_limit_without_using_a_number(self):
-		self.receipt_of(make_invoice([(ITEM, 1, 10)]))
+		self._sale()
 		last = self._last()
 		self._set("Never", last)
 		self.assertRaises(frappe.ValidationError, make_invoice, [(ITEM, 1, 10)])
 		self.assertEqual(self._last(), last)
 
 	def test_receipts_with_one_global_number_in_two_days_are_both_kept(self):
-		self._set("Every Fiscal Day", 0)
-		self.receipt_of(make_invoice([(ITEM, 1, 10)]))
-		self._close_current_day()
-		a = self.receipt_of(make_invoice([(ITEM, 1, 10)]))
-		self._close_current_day()
-		b = self.receipt_of(make_invoice([(ITEM, 1, 10)]))
+		self._sale()
+		self._restart_at_next_sale()
+		a = self._sale()
+		self._restart_at_next_sale()  # the limit is now 1
+		b = self._sale()
 		self.assertEqual((a.receipt_global_no, b.receipt_global_no), (1, 1))
-		self.assertNotEqual(a.fiscal_day_no, b.fiscal_day_no)
+		self.assertEqual(b.fiscal_day_no, a.fiscal_day_no + 1)

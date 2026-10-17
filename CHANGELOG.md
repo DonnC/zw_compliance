@@ -17,7 +17,7 @@ mode). This replaces the earlier prototype entirely.
 - Tax is computed per tax group (RCPT026), with half-even rounding in `Decimal`.
 - Every locally checkable §8.2.1 rule is enforced before submit. This includes the credit and debit note rules RCPT015/033/034/035/036/042, buyer data (RCPT043) and HS codes (RCPT047/048).
 - Receipts are numbered, chained and signed inside the invoice's database transaction under a device row lock, then sent strictly in order (§9 req. 6, 8, 12–14).
-- Global numbering policy per device (§9 req. 7): Near Limit (default), Every Fiscal Day or Never, with an optional limit. A restart to 1 only happens with the first receipt of a new fiscal day; reaching the limit mid-day closes the day, or with Never refuses the invoice. Receipts are unique, named and sent in order by fiscal day and global number together.
+- Global numbering policy per device (§9 req. 6–7): Near Limit (default) or Never, with an optional limit. Numbers continue across fiscal days; no daily restart is offered. A restart to 1 only happens with the first receipt of a new fiscal day; reaching the limit mid-day closes the day, or with Never refuses the invoice. Receipts are unique, named and sent in order by fiscal day and global number together.
 - Fiscal-day close is blocked while Grey or Red receipts exist (§4.11). Counters are recomputed from the signed payloads before signing.
 - The application refuses to uninstall while receipts are unsent (§9 req. 22).
 - Verification code and QR per §11; Receipt48, InvoiceA4 and Z/X report views per §10.
