@@ -222,7 +222,8 @@ def _submit_receipts(device_name: str, client, deadline: float) -> bool:
 		RECEIPT,
 		filters={"fiscal_device": device_name, "sync_status": ["in", [*UNSENT, REJECTED]]},
 		fields=["name", "sync_status", "next_attempt_at", "fiscal_day"],
-		order_by="receipt_global_no asc",
+		# global numbers may restart at 1 in a new day, so the day comes first
+		order_by="fiscal_day_no asc, receipt_global_no asc",
 	)
 	for row in queue:
 		if row.sync_status == REJECTED:

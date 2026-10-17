@@ -63,7 +63,8 @@ is deliberate: once signed, a receipt is a tax record.
    - Pick the company and the environment.
    - Enter the Device ID, Serial No, model name and model version exactly as registered with ZIMRA.
    - Tick **Default Device for Company**, or add the POS Profiles this device serves (several devices per company are supported).
-   - If you are moving from another fiscal system, enter its last receipt global number in **Last Receipt Global No of Previous Software**.
+   - If you are moving from another fiscal system, enter the global number of its last receipt in **Last Receipt Global No of Previous Software**.
+   - Optionally choose when global numbers start again at 1 under **Receipt Numbering** (see [Global receipt numbers](#global-receipt-numbers)).
    - Save.
 2. Enter the **activation key**, then press **Verify Taxpayer**. ZIMRA answers with the taxpayer name, TIN, VAT number and branch it holds for this device. Confirm only if they are yours.
 3. Press **Register Device**. ERPNext generates the device key, receives the ZIMRA certificate and fetches the configuration. It also sets up taxes (next step). The status becomes **Active**.
@@ -158,6 +159,25 @@ stateDiagram-v2
   - The day becomes **Closed** and the **Z Report** is available.
 - Sales made while a day is closing go into the next day automatically.
 - **Close Failed.** ZIMRA refused the close; the reason and the fix are on the day. Fix the cause, then press **Retry Close**.
+
+### Global receipt numbers
+
+Every receipt carries a global number that runs on across fiscal days. ZIMRA
+allows it to start again at 1 only with the first receipt of a new fiscal day,
+so ERPNext only ever restarts it there. Choose when on the fiscal device,
+under **Receipt Numbering**:
+
+| Global Number Reset | The global number starts again at 1 |
+|---|---|
+| **Near Limit** (default) | In the first new fiscal day after it passes 90% of the limit. If the limit is reached during a day, that day is closed and the next sale opens a new one, so invoicing never stops. |
+| **Every Fiscal Day** | In every new fiscal day. |
+| **Never** | Never. Once the limit is reached, invoices are refused until the setting is changed. |
+
+**Global Number Limit** is blank by default, meaning the largest number a
+receipt can carry. Set it only if ZIMRA gives your device a lower limit.
+
+A receipt is identified by its fiscal day and global number together, so
+credit notes always point at the right original, before or after a restart.
 
 ## Printing
 

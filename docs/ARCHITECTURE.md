@@ -88,7 +88,7 @@ sequenceDiagram
     end
     DB-->>U: committed: receipt printable now (QR + verification code)
     DB-)Q: after commit: enqueue (deduplicated)
-    Q->>Z: submitReceipt (strictly in globalNo order)
+    Q->>Z: submitReceipt (strictly in fiscal day, then globalNo order)
     Z-->>Q: receiptID + FDMS signature (verified)
     Q->>DB: Submitted
 ```
@@ -131,7 +131,7 @@ flowchart TD
     open -- yes --> cfg["getConfig → getStatus → openDay<br/>lost answer recovered from getStatus"]
     open -- no --> sub
     cfg --> sub
-    sub{"Next receipt in globalNo order"}
+    sub{"Next receipt in day, then globalNo order"}
     sub -- none, or its day not opened --> close
     sub -- back-off not over --> close
     sub -- send --> res{"FDMS answer"}
@@ -151,7 +151,7 @@ flowchart TD
    - getConfig, which refreshes taxpayer data, taxes and VAT status (§9 req. 2);
    - getStatus;
    - openDay with the device's own day number. A lost openDay answer is recovered from getStatus.
-2. **Submit.** Queued and Retrying receipts go one at a time in `receiptGlobalNo` order (§9 req. 13). The queue stops at the first failure, because skipping would break the chain. Re-sending is safe: FDMS answers a duplicate with the original receiptID (§4.7).
+2. **Submit.** Queued and Retrying receipts go one at a time in fiscal day, then `receiptGlobalNo` order (§9 req. 13); the day comes first because global numbers may start again at 1 in a new day. The queue stops at the first failure, because skipping would break the chain. Re-sending is safe: FDMS answers a duplicate with the original receiptID (§4.7).
 3. **Close.** Once all of a day's receipts are Submitted and none is Grey or Red (§4.11), counters are recomputed from the signed payloads, compared with the incremental ones and with getStatus, the day is signed (§13.3.1) and closeDay is sent.
 4. **Poll.** getStatus until FiscalDayClosed (FDMS's day signature is verified) or a refusal (Close Failed, with the error code and fix).
 
@@ -175,7 +175,7 @@ a receipt, never its number, hash or content.
 | ZIMRA refuses a receipt outright (400, RCPT01/02) | *Rejected*; queue stops; managers alerted | Held: later receipts are never sent ahead of it |
 | ZIMRA flags a receipt (Yellow/Grey/Red) | Stored on the receipt and surfaced in the workspace; Grey/Red block the close | None |
 | Worker crashes mid-run | Every step commits; the next run resumes | None |
-| Day reaches its maximum length while offline | The day is marked for closing; new sales go into the next day, announced once the previous day closes | None: global numbers continue |
+| Day reaches its maximum length while offline | The day is marked for closing; new sales go into the next day, announced once the previous day closes | None: global numbers continue (or restart at 1 in the new day, if the device's numbering policy says so) |
 
 A connection that flaps (up, down with sales, up, down again with a lost
 answer, up) is covered end to end by
@@ -234,7 +234,7 @@ that day is announced as soon as the previous close completes.
 |---|---|
 | Zimra Fiscal Device | One per ZIMRA device: identity, lifecycle status, taxpayer and config snapshot, certificate (permlevel 1), key (encrypted, permlevel 1), runtime state. Row-locked while signing |
 | Zimra Fiscal Day | One per device and day number (unique): status, counters, last hash, signatures, operation IDs |
-| Zimra Fiscal Receipt | The outbox and the audit record. Unique per (device, globalNo), per source document, and per invoice number. Holds the exact signed payload, the seller snapshot used for printing, and FDMS's answer. Immutable after insert; never deletable; read-only for every role |
+| Zimra Fiscal Receipt | The outbox and the audit record. Unique per (device, fiscal day, globalNo), per source document, and per invoice number. Holds the exact signed payload, the seller snapshot used for printing, and FDMS's answer. Immutable after insert; never deletable; read-only for every role |
 | Zimra Tax Mapping | ZIMRA tax ↔ accounts and templates, per company |
 | Zimra Settings | Global: currencies, money types, automation, notifications |
 | Zimra HSN Code | ZIMRA's HS list (4 or 8 digits usable on receipts) |

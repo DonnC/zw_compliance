@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:{fiscal_device}-R{receipt_global_no}",
+ "autoname": "format:{fiscal_device}-D{fiscal_day_no}-R{receipt_global_no}",
  "creation": "2026-10-16 09:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -466,7 +466,7 @@
  "in_create": 1,
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-16 09:00:00.000000",
+ "modified": "2026-10-17 12:28:53.611534",
  "modified_by": "Administrator",
  "module": "ZIMRA Fiscalisation",
  "name": "Zimra Fiscal Receipt",
