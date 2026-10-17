@@ -126,7 +126,6 @@ def day_for_receipt(device, now):
 	day = (
 		frappe.get_doc(DAY, device.current_fiscal_day, for_update=True) if device.current_fiscal_day else None
 	)
-	numbering.require_number_available(device)
 	if day and day.status == DAY_PENDING_OPEN and not day.receipt_counter and not day.open_operation_id:
 		# Not yet announced to ZIMRA and still empty: its opening time is the first sale,
 		# which is the first receipt of a new day, so numbering may restart here.
@@ -137,7 +136,7 @@ def day_for_receipt(device, now):
 	if day and day.status in DAY_ACCEPTING:
 		if numbering.at_limit(device):
 			# Numbering may only restart in a new day: close this one.
-			mark_close_requested(day, _("Global receipt number limit reached"))
+			_close_at_number_limit(device, day)
 		elif not _must_roll_over(day, device, now):
 			return day
 		else:
@@ -150,6 +149,16 @@ def day_for_receipt(device, now):
 			title=_("Fiscal Day Not Open"),
 		)
 	return open_local_day(device, now)
+
+
+def _close_at_number_limit(device, day) -> None:
+	from .notifications import notify_managers
+
+	message = _(
+		"Fiscal device {0} reached its global receipt number limit ({1}). ZIMRA accepts a restart at 1 only in a new fiscal day, so fiscal day {2} is being closed and the next sale opens a new day. A Z report will be produced now."
+	).format(device.device_name, numbering.limit(device), day.fiscal_day_no)
+	mark_close_requested(day, message)
+	notify_managers(device, _("Fiscal day closed at the global number limit"), message, reference=day)
 
 
 def mark_close_requested(day, reason: str | None = None) -> None:

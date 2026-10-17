@@ -21,7 +21,7 @@ from frappe.utils import add_months, flt, get_datetime
 from zw_compliance.fdms.errors import ReceiptValidationError, describe
 from zw_compliance.fdms.receipt import build_receipt
 
-from . import builder, numbering
+from . import builder
 from .constants import DEVICE, RECEIPT, REJECTED, SETTINGS
 from .device import device_now, is_vat_payer, require_active, resolve_device
 
@@ -68,7 +68,6 @@ def before_submit(doc, method=None) -> None:
 def check_invoice(doc, device) -> builder.Draft:
 	"""Raise if ``doc`` cannot be fiscalised on ``device``; return the draft."""
 	require_active(device)
-	numbering.require_number_available(device)
 	settings = frappe.get_cached_doc(SETTINGS)
 	currencies = allowed_currencies(settings)
 	if doc.currency.upper() not in currencies:

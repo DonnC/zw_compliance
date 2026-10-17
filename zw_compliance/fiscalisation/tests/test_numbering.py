@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from unittest.mock import patch
 
 import frappe
 
@@ -36,17 +37,13 @@ class TestNumberingPolicy(UnitTestCase):
 		self.assertFalse(numbering.restarts_in_new_day(_device(last=1)))
 		self.assertFalse(numbering.restarts_in_new_day(_device(last=1_900_000_000)))
 
-	def test_unknown_policies_are_treated_as_near_limit(self):
-		self.assertEqual(numbering.reset_policy(_device("Every Fiscal Day")), "Near Limit")
-		self.assertFalse(numbering.restarts_in_new_day(_device("Every Fiscal Day", last=1)))
+	def test_every_fiscal_day_restarts_once_a_number_was_used(self):
+		self.assertTrue(numbering.restarts_in_new_day(_device("Every Fiscal Day", last=1)))
+		self.assertFalse(numbering.restarts_in_new_day(_device("Every Fiscal Day", last=0)))
 
-	def test_never_never_restarts_and_refuses_at_the_limit(self):
-		self.assertFalse(numbering.restarts_in_new_day(_device("Never", limit=10, last=10)))
-		numbering.require_number_available(_device("Never", limit=10, last=9))
-		self.assertRaises(
-			frappe.ValidationError, numbering.require_number_available, _device("Never", limit=10, last=10)
-		)
-		numbering.require_number_available(_device(limit=10, last=10))  # Near Limit rolls over instead
+	def test_unknown_policies_are_treated_as_near_limit(self):
+		self.assertEqual(numbering.reset_policy(_device("Never")), "Near Limit")
+		self.assertTrue(numbering.restarts_in_new_day(_device("Never", limit=10, last=10)))
 
 	def test_blank_or_oversized_limits_mean_the_largest_number(self):
 		self.assertEqual(numbering.limit(_device()), numbering.MAX_GLOBAL_NO)
@@ -56,6 +53,7 @@ class TestNumberingPolicy(UnitTestCase):
 
 class TestGlobalNumbering(FiscalisationTestCase):
 	def setUp(self):
+		self._settle()  # start from a device with nothing queued or closing
 		self.addCleanup(self._set, None, 0)
 
 	def _set(self, policy, limit):
@@ -77,9 +75,24 @@ class TestGlobalNumbering(FiscalisationTestCase):
 		self._set("Near Limit", self._last())
 
 	def _settle(self):
-		self.sync()
-		self.fdms.settle()
-		self.sync()
+		"""Sync until every receipt is sent and every closing day is closed."""
+		for _ in range(10):
+			self.sync()
+			self.fdms.settle()
+			self.sync()
+			pending = frappe.db.count(
+				"Zimra Fiscal Receipt",
+				{
+					"fiscal_device": self.device.name,
+					"sync_status": ["in", ["Queued", "Retrying", "Submitting"]],
+				},
+			) + frappe.db.count(
+				"Zimra Fiscal Day",
+				{"fiscal_device": self.device.name, "status": ["in", ["Close Requested", "Close Initiated"]]},
+			)
+			if not pending:
+				return
+		self.fail("the device did not settle")
 
 	def _assert_accepted(self, *receipts):
 		for receipt in receipts:
@@ -152,12 +165,43 @@ class TestGlobalNumbering(FiscalisationTestCase):
 		self.sync()
 		self._assert_accepted(credit)
 
-	def test_never_refuses_at_the_limit_without_using_a_number(self):
+	def test_every_fiscal_day_starts_each_new_day_at_one(self):
+		self._set("Every Fiscal Day", 0)
+		before = self._sale()
+		request_close(before.fiscal_day)
+		self._settle()
+		first = self._sale()
+		second = self._sale()
+		self.assertEqual((first.fiscal_day_no, first.receipt_global_no), (before.fiscal_day_no + 1, 1))
+		self.assertEqual(second.receipt_global_no, 2)
+		self.sync()
+		self._assert_accepted(before, first, second)
+
+	def test_every_fiscal_day_also_rolls_over_at_the_limit(self):
+		self._set("Every Fiscal Day", 0)
 		self._sale()
-		last = self._last()
-		self._set("Never", last)
-		self.assertRaises(frappe.ValidationError, make_invoice, [(ITEM, 1, 10)])
-		self.assertEqual(self._last(), last)
+		self._restart_at_next_sale()
+		self._set("Every Fiscal Day", self._last())
+		at_limit_day = frappe.db.get_value("Zimra Fiscal Device", self.device.name, "current_fiscal_day")
+		restarted = self._sale()
+		self.assertEqual(restarted.receipt_global_no, 1)
+		self.assertNotEqual(restarted.fiscal_day, at_limit_day)
+		self.assertEqual(frappe.db.get_value("Zimra Fiscal Day", at_limit_day, "status"), "Close Requested")
+
+	def test_managers_are_told_when_the_limit_closes_a_day(self):
+		self._sale()
+		self._restart_at_next_sale()
+		day = frappe.db.get_value("Zimra Fiscal Device", self.device.name, "current_fiscal_day")
+		with patch("zw_compliance.fiscalisation.notifications.notify_managers") as notify:
+			self._sale()
+		notify.assert_called_once()
+		self.assertEqual(notify.call_args.kwargs["reference"].name, day)
+		comments = frappe.get_all(
+			"Comment",
+			filters={"reference_doctype": "Zimra Fiscal Day", "reference_name": day},
+			pluck="content",
+		)
+		self.assertTrue(any("global receipt number limit" in c for c in comments), comments)
 
 	def test_receipts_with_one_global_number_in_two_days_are_both_kept(self):
 		self._sale()

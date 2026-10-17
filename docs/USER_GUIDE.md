@@ -162,26 +162,38 @@ stateDiagram-v2
 
 ### Global receipt numbers
 
-Every receipt carries a global number that runs on across fiscal days, from
-the device's first receipt. ZIMRA allows it to start again at 1 only once it
-becomes very big, and only with the first receipt of a new fiscal day, so
-ERPNext only ever restarts it there. Choose how on the fiscal device, under
-**Receipt Numbering**:
+Every receipt carries a global number that runs on across fiscal days. ZIMRA
+accepts a restart at 1 only with the first receipt of a fiscal day, and rejects
+one in the middle of a day, so ERPNext only ever restarts it when a new day
+begins. Choose when on the fiscal device, under **Receipt Numbering**:
 
 | Global Number Reset | The global number starts again at 1 |
 |---|---|
-| **Near Limit** (default) | In the first new fiscal day after it passes 90% of the limit. If the limit is reached during a day, that day is closed and the next sale opens a new one, so invoicing never stops. |
-| **Never** | Never. Once the limit is reached, invoices are refused until the setting is changed. |
+| **Near Limit** (default) | In the first new fiscal day after it passes 90% of the limit, so normally at an ordinary day boundary. |
+| **Every Fiscal Day** | In every new fiscal day. |
 
 **Global Number Limit** is blank by default, meaning the largest number a
-receipt can carry (2,147,483,647). Numbering then simply continues, as ZIMRA
-describes. Set a lower limit only if you want to restart earlier.
+receipt can carry (2,147,483,647). Numbering then simply continues: at 100,000
+receipts a day that lasts about 59 years. Set a lower limit to restart earlier,
+for example to keep printed numbers short.
 
-Restarting every day is not offered: ZIMRA defines the global number as the
-running total of receipts since the device was activated.
+Invoicing never stops at the limit. After it, the only number ZIMRA accepts is
+1 in a new fiscal day, so if the limit is reached during a day, under either
+setting, ERPNext closes that day and the next sale opens a new one starting
+at 1. ZIMRA allows a day to be closed at any time. ZIMRA Managers are alerted
+and the reason is recorded on the fiscal day, because a Z report then appears
+during trading.
 
 A receipt is identified by its fiscal day and global number together, so
 credit notes always point at the right original, before or after a restart.
+
+### Fiscal days and trading hours
+
+ZIMRA does not tie fiscal days to calendar days or business hours. A day lasts
+from its opening to its close, at most the device's **Maximum Fiscal Day**
+hours; a day may run past midnight, and one date may have several days. Fit
+days to your trading hours with *Open Day At* and *Close Day At* in Zimra
+Settings, or close by hand.
 
 ## Printing
 
