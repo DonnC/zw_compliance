@@ -13,6 +13,8 @@ from .fixtures import (
 	COMPANY,
 	GROUP,
 	ITEM,
+	ITEM_EXEMPT,
+	ITEM_ZERO,
 	WALK_IN,
 	FiscalisationTestCase,
 	ensure_customer,
@@ -108,6 +110,39 @@ class TestInvoiceRules(FiscalisationTestCase):
 		self.sync()
 		receipt.reload()
 		self.assertFalse(receipt.validation_errors, [e.as_dict() for e in receipt.validation_errors])
+
+	def _assert_accepted_and_balanced(self, invoice):
+		receipt = self.receipt_of(invoice)
+		payload = json.loads(receipt.payload)
+		self.assertAlmostEqual(payload["receiptTotal"], invoice.grand_total, places=2)
+		self.assertAlmostEqual(
+			sum(l["receiptLineTotal"] for l in payload["receiptLines"]), invoice.grand_total, places=2
+		)
+		tax_by_id = {t["taxID"]: t["taxAmount"] for t in payload["receiptTaxes"]}
+		self.assertAlmostEqual(tax_by_id.get(1, 0), invoice.total_taxes_and_charges, places=2)
+		self.sync()
+		receipt.reload()
+		self.assertEqual(receipt.sync_status, "Submitted", receipt.last_error)
+		self.assertFalse(receipt.validation_errors, [e.as_dict() for e in receipt.validation_errors])
+
+	def test_document_discount_on_net_total(self):
+		invoice = make_invoice([(ITEM, 3, 33.33), (ITEM_ZERO, 2, 7.8)], submit=False)
+		invoice.apply_discount_on = "Net Total"
+		invoice.additional_discount_percentage = 12.5
+		invoice.calculate_taxes_and_totals()
+		invoice.save(ignore_permissions=True)
+		invoice.submit()
+		self.assertGreater(invoice.discount_amount, 0)
+		self._assert_accepted_and_balanced(invoice)
+
+	def test_document_discount_on_grand_total(self):
+		invoice = make_invoice([(ITEM, 2, 49.99), (ITEM_EXEMPT, 1, 120)], submit=False)
+		invoice.apply_discount_on = "Grand Total"
+		invoice.discount_amount = 17.35
+		invoice.calculate_taxes_and_totals()
+		invoice.save(ignore_permissions=True)
+		invoice.submit()
+		self._assert_accepted_and_balanced(invoice)
 
 	def test_debit_note_is_positive_and_references_the_original(self):
 		original = make_invoice([(ITEM, 1, 100)])
@@ -319,7 +354,14 @@ class TestPosInvoice(FiscalisationTestCase):
 
 		before = frappe.db.count("Zimra Fiscal Receipt")
 		log = frappe.new_doc("POS Invoice Merge Log")
-		log.update({"posting_date": frappe.utils.today(), "customer": WALK_IN, "company": COMPANY})
+		log.update(
+			{
+				"posting_date": frappe.utils.today(),
+				"posting_time": frappe.utils.nowtime(),  # mandatory on ERPNext v16
+				"customer": WALK_IN,
+				"company": COMPANY,
+			}
+		)
 		log.append(
 			"pos_invoices",
 			{

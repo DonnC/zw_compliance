@@ -31,7 +31,29 @@ mode). This replaces the earlier prototype entirely.
 - Workspace in two parts: *Compliance health* (unfiscalised invoices, awaiting, rejected, flagged, sync errors, pending closes, fiscal-day hours left, certificate days left, attention lists) and *Sales and VAT* (fiscal sales and output VAT per currency, receipt breakdowns).
 - Demo data (`zw_compliance.fiscalisation.demo.seed` / `wipe`): three weeks of history through the real flow against the built-in simulator, isolated in its own company and fully removable.
 - A new sale or **Send Now** retries a connection failure immediately instead of waiting out the back-off, so the queue drains as soon as the line is back.
-- In-process FDMS for tests (port of the zimra-fdms simulator), plus an end-to-end check against the zimra-fdms simulator over mutual TLS. CI on ERPNext v16 (manual trigger for now).
+- In-process FDMS for tests (port of the zimra-fdms simulator), plus an end-to-end check against the zimra-fdms simulator over mutual TLS.
+- App logo, shown in the desk and on the Frappe v15+ apps screen (for ZIMRA, System and Accounts managers).
+- ZWG (Zimbabwe Gold) currency is created on install and migrate when missing; Frappe's own list only has ZWL. An existing ZWG record is left untouched.
+- Tests for document-level discounts (on Net Total and on Grand Total): receipt total, line totals and VAT match ERPNext to the cent.
+
+### Changed
+
+- CI runs only when started by hand (Actions → CI → Run workflow); the automatic triggers are kept, commented out. It tests ERPNext v16 only (Python 3.14, Node 24).
+- The app supports ERPNext v15 and later.
+- README: logo, social preview as the main image, a screenshots section, installation from `github.com/DonnC/zw_compliance`.
+
+### Fixed
+
+- Workspace number cards and charts did not render: blocks referred to widgets by document name instead of label. A test now checks every block.
+- Number cards and money charts used a possibly stale server-side default company; they now follow the company selected in the browser.
+- Report formatters failed on rows without data, which misaligned the Fiscal Receipt Register's columns.
+- The Fiscal Receipt Register and Fiscal Day Summary had total rows that added day numbers, counters and amounts in different currencies. They are removed, with a patch for existing sites.
+- ERPNext v16 compatibility:
+  - fresh test sites get ERPNext's base data (v15 `before_tests` hook, v16 `BootStrapTestData`);
+  - customers use non-group Customer Groups;
+  - the Z report no longer passes SQL functions as `get_all` fields;
+  - POS Invoice Merge Log tests set `posting_time`.
+- On Python 3.13+, TLS to a development CA (the Test environment's *Trusted CA* override, e.g. the zimra-fdms simulator) failed strict X.509 checks. That override now verifies chain and hostname without the strict profile; ZIMRA's servers keep strict verification.
 
 ### Removed
 

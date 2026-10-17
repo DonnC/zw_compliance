@@ -111,9 +111,10 @@ runs:
   run, on ERPNext `version-16` (Python 3.14, Node 24).
 
 `bench run-tests --app zw_compliance` runs only this app's `before_tests`
-hooks, so `zw_compliance.testing.before_tests` calls ERPNext's own: it
-completes the setup wizard on a fresh site (warehouse types, customer groups,
-territories, price lists) and does nothing on a site already set up.
+hooks, so `zw_compliance.testing.before_tests` runs ERPNext's own test set-up:
+the `before_tests` hook on v15, or the `BootStrapTestData` import on v16. On a
+fresh site that creates warehouse types, customer groups, territories and price
+lists; on a site already set up it does nothing.
 
 ## Releasing
 
