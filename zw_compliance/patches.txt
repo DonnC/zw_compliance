@@ -6,3 +6,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 zw_compliance.patches.v1_0.migrate_legacy_zimra_fields
 zw_compliance.patches.v1_0.reports_without_total_row
+zw_compliance.patches.v1_0.receipt_unique_per_fiscal_day

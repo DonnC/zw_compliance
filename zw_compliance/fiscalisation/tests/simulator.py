@@ -486,7 +486,9 @@ class FakeFdms:
 			)
 
 		previous = day.receipts[-1] if day.receipts else None
-		highest = max((x.receipt["receiptGlobalNo"] for x in all_receipts), default=0)
+		# The global number follows the device's previous receipt, or starts again
+		# at 1 with the first receipt of a fiscal day.
+		highest = all_receipts[-1].receipt["receiptGlobalNo"] if all_receipts else 0
 		if r["receiptCounter"] != len(day.receipts) + 1:
 			err(
 				"RCPT011",
@@ -602,10 +604,12 @@ class FakeFdms:
 				original = next(
 					(
 						x
-						for x in all_receipts
+						for d in device.days
+						for x in d.receipts
 						if x.receipt_id == ref.get("receiptID")
 						or (
 							x.receipt["receiptGlobalNo"] == ref.get("receiptGlobalNo")
+							and d.fiscal_day_no == ref.get("fiscalDayNo")
 							and ref.get("deviceID") == device.device_id
 						)
 					),

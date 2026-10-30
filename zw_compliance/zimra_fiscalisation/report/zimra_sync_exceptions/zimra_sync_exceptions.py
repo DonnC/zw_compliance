@@ -76,13 +76,13 @@ def receipts(filters):
 		"Zimra Fiscal Receipt",
 		filters={**_base(filters), "sync_status": ["!=", "Submitted"]},
 		fields=fields,
-		order_by="receipt_global_no asc",
+		order_by="fiscal_day_no asc, receipt_global_no asc",
 	)
 	flagged = frappe.get_list(
 		"Zimra Fiscal Receipt",
 		filters={**_base(filters), "worst_colour": ["is", "set"]},
 		fields=fields,
-		order_by="receipt_global_no asc",
+		order_by="fiscal_day_no asc, receipt_global_no asc",
 	)
 	for r in pending:
 		entry = describe(r.last_error_code)

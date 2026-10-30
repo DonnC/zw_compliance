@@ -21,6 +21,10 @@
   "print_form",
   "column_break_2",
   "pos_profiles",
+  "numbering_section",
+  "global_number_reset",
+  "column_break_numbering",
+  "global_number_limit",
   "section_break_2",
   "activation_key",
   "section_break_3",
@@ -137,7 +141,7 @@
   },
   {
    "depends_on": "eval:['Draft','Taxpayer Verified','Registered'].includes(doc.status)",
-   "description": "Only if this ZIMRA device ID was used by other software before: the highest receiptGlobalNo it issued. Numbering continues after the larger of this and ZIMRA's figure.",
+   "description": "Only if this ZIMRA device ID was used by other software before: the receiptGlobalNo of the last receipt it issued. Numbering continues after the larger of this and ZIMRA's figure.",
    "fieldname": "previous_last_receipt_global_no",
    "fieldtype": "Int",
    "label": "Last Receipt Global No of Previous Software"
@@ -179,6 +183,32 @@
    "fieldtype": "Table",
    "label": "POS Profiles",
    "options": "Zimra Device POS Profile"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "numbering_section",
+   "fieldtype": "Section Break",
+   "label": "Receipt Numbering",
+   "description": "ZIMRA accepts a restart of the global receipt number at 1 only with the first receipt of a fiscal day, so a restart only ever happens there."
+  },
+  {
+   "default": "Near Limit",
+   "fieldname": "global_number_reset",
+   "fieldtype": "Select",
+   "label": "Global Number Reset",
+   "options": "Near Limit\nEvery Fiscal Day",
+   "description": "Near Limit: numbers continue across fiscal days and start again at 1 in the first new day after passing 90% of the limit. Every Fiscal Day: each new day starts at 1. Under either, if the limit is reached during a day, that day is closed and the next sale opens a new day at 1, so invoicing never stops."
+  },
+  {
+   "fieldname": "column_break_numbering",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "global_number_limit",
+   "fieldtype": "Int",
+   "label": "Global Number Limit",
+   "non_negative": 1,
+   "description": "The highest global receipt number this device issues. Blank: the largest a receipt can carry (2147483647), so numbering simply continues. Set lower to restart earlier, for example to keep printed numbers short."
   },
   {
    "fieldname": "section_break_2",
@@ -433,7 +463,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-16 18:00:00.000000",
+ "modified": "2026-10-17 12:51:24.295469",
  "modified_by": "Administrator",
  "module": "ZIMRA Fiscalisation",
  "name": "Zimra Fiscal Device",

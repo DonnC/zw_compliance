@@ -17,6 +17,7 @@ mode). This replaces the earlier prototype entirely.
 - Tax is computed per tax group (RCPT026), with half-even rounding in `Decimal`.
 - Every locally checkable §8.2.1 rule is enforced before submit. This includes the credit and debit note rules RCPT015/033/034/035/036/042, buyer data (RCPT043) and HS codes (RCPT047/048).
 - Receipts are numbered, chained and signed inside the invoice's database transaction under a device row lock, then sent strictly in order (§9 req. 6, 8, 12–14).
+- Global numbering policy per device (§9 req. 6–7): Near Limit (default) or Every Fiscal Day, with an optional limit (2,147,483,647 by default). A restart to 1 only happens with the first receipt of a new fiscal day. Invoicing never stops at the limit: reaching it mid-day closes the day, alerts ZIMRA Managers, and the next sale opens a new day at 1. Receipts are unique, named and sent in order by fiscal day and global number together.
 - Fiscal-day close is blocked while Grey or Red receipts exist (§4.11). Counters are recomputed from the signed payloads before signing.
 - The application refuses to uninstall while receipts are unsent (§9 req. 22).
 - Verification code and QR per §11; Receipt48, InvoiceA4 and Z/X report views per §10.
@@ -41,6 +42,8 @@ mode). This replaces the earlier prototype entirely.
 - CI runs only when started by hand (Actions → CI → Run workflow); the automatic triggers are kept, commented out. It tests ERPNext v16 only (Python 3.14, Node 24).
 - The app supports ERPNext v15 and later.
 - README: logo, social preview as the main image, a screenshots section, installation from `github.com/DonnC/zw_compliance`.
+- New fiscal receipts are named `<device>-D<fiscal day>-R<global no>`; existing receipts keep their names. A patch replaces the unique key on (device, global no) with (device, fiscal day, global no).
+- The test FDMS simulator checks a receipt's global number against the device's previous receipt, and finds a credit note's original by fiscal day as well as global number.
 
 ### Fixed
 

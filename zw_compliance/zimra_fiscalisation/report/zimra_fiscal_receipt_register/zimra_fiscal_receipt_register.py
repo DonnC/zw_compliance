@@ -85,5 +85,5 @@ def data(filters):
 		"Zimra Fiscal Receipt",
 		filters=conditions,
 		fields=[c["fieldname"] for c in columns()],
-		order_by="fiscal_device asc, receipt_global_no desc",
+		order_by="fiscal_device asc, fiscal_day_no desc, receipt_global_no desc",
 	)

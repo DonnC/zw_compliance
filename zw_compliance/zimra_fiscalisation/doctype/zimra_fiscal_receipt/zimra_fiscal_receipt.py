@@ -54,8 +54,11 @@ class ZimraFiscalReceipt(Document):
 
 
 def on_doctype_update():
+	# Global numbers may restart at 1 in a new fiscal day, so a receipt is unique per device and day.
 	frappe.db.add_unique(
-		"Zimra Fiscal Receipt", ["fiscal_device", "receipt_global_no"], "unique_device_global_no"
+		"Zimra Fiscal Receipt",
+		["fiscal_device", "fiscal_day_no", "receipt_global_no"],
+		"unique_device_day_global_no",
 	)
 	frappe.db.add_unique("Zimra Fiscal Receipt", ["reference_doctype", "reference_name"], "unique_reference")
 	frappe.db.add_index("Zimra Fiscal Receipt", ["fiscal_device", "sync_status"])
