@@ -133,6 +133,7 @@ def day_for_receipt(device, now):
 		if numbering.restarts_in_new_day(device):
 			device.db_set("last_receipt_global_no", 0, update_modified=False)
 		return day
+	rolled_over = False
 	if day and day.status in DAY_ACCEPTING:
 		if numbering.at_limit(device):
 			# Numbering may only restart in a new day: close this one.
@@ -141,7 +142,11 @@ def day_for_receipt(device, now):
 			return day
 		else:
 			mark_close_requested(day, _("Maximum fiscal day length reached"))
-	if not frappe.db.get_single_value(SETTINGS, "auto_open_day"):
+		rolled_over = True
+	# A day that had to roll over is always followed by a new local day, whatever
+	# the setting: refusing would stop sales, for example while ZIMRA is down.
+	# The setting only decides whether a sale may open a day from nothing.
+	if not rolled_over and not frappe.db.get_single_value(SETTINGS, "auto_open_day"):
 		frappe.throw(
 			_(
 				"No ZIMRA fiscal day is open on {0}. Open one from the fiscal device, or enable automatic opening in Zimra Settings."

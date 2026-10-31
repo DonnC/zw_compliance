@@ -73,7 +73,7 @@
   },
   {
    "default": "1",
-   "description": "Open a fiscal day on the first invoice when none is open.",
+   "description": "Open a fiscal day on the first invoice when none is open. A day that reaches its maximum length is always followed by a new one, so sales never stop.",
    "fieldname": "auto_open_day",
    "fieldtype": "Check",
    "label": "Open Fiscal Day Automatically"
@@ -124,8 +124,8 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "description": "When on, certificates inside the warning period are renewed automatically before the next fiscal day. When off, managers are notified and renew from the device form.",
+   "default": "1",
+   "description": "When on, certificates inside the warning period are renewed automatically, well before they expire and any ZIMRA outage can matter. When off, managers are notified and renew from the device form.",
    "fieldname": "auto_renew_certificate",
    "fieldtype": "Check",
    "label": "Renew Certificates Automatically"
@@ -142,7 +142,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-16 09:00:00.000000",
+ "modified": "2026-10-31 15:35:19.608892",
  "modified_by": "Administrator",
  "module": "ZIMRA Fiscalisation",
  "name": "Zimra Settings",

@@ -5,6 +5,14 @@ Versions follow [Semantic Versioning](https://semver.org/). Changes that
 affect what is signed, numbered or sent to ZIMRA are listed under
 **Compliance**.
 
+## [Unreleased]
+
+### Changed
+
+- ZIMRA outages never stop sales. A fiscal day that reaches its maximum length is always followed by a new local day, even with *Open Fiscal Day Automatically* off.
+- An expired device certificate no longer blocks invoices. They are fiscalised and queued, with a warning, until ZIMRA issues a new certificate.
+- *Renew Certificates Automatically* is on by default.
+
 ## [0.1.0] - unreleased
 
 First implementation of the ZIMRA *Fiscal Device Gateway API* v7.2 (online

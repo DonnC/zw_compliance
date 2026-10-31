@@ -145,12 +145,26 @@ def require_active(device) -> None:
 			),
 			title=_("Fiscal Device Not Active"),
 		)
-	if device.certificate_valid_till and get_datetime(device.certificate_valid_till) <= now_datetime():
-		frappe.throw(
+
+
+def certificate_expired(device) -> bool:
+	return bool(
+		device.certificate_valid_till and get_datetime(device.certificate_valid_till) <= now_datetime()
+	)
+
+
+def warn_if_certificate_expired(device) -> None:
+	"""An expired certificate does not stop sales: receipts are still signed and
+	queued, and reach ZIMRA once the device has a valid certificate again.
+	Renewal needs ZIMRA, so blocking here would halt a business through no
+	fault of its own, for example during a long ZIMRA outage."""
+	if certificate_expired(device):
+		frappe.msgprint(
 			_(
-				"The ZIMRA certificate of fiscal device {0} expired on {1}. ZIMRA refuses all requests from an expired certificate; re-register the device."
+				"The ZIMRA certificate of fiscal device {0} expired on {1}. This invoice is fiscalised and queued, but ZIMRA will not receive it until the device has a new certificate from ZIMRA."
 			).format(frappe.bold(device.device_name), device.certificate_valid_till),
 			title=_("Fiscal Device Certificate Expired"),
+			indicator="orange",
 		)
 
 

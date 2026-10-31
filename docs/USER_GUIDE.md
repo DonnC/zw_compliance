@@ -48,13 +48,13 @@ is deliberate: once signed, a receipt is a tax record.
 | Money Type for Unpaid Balance | How the unpaid part of an invoice is reported | Credit |
 | Money Type for Advances | How allocated advances are reported | BankTransfer |
 | Payment Mode Mapping | Mode of Payment → ZIMRA money type, when ERPNext's payment type (Cash, Bank, Phone…) is not enough | empty |
-| Open Fiscal Day Automatically | Open the day on the first sale | On |
+| Open Fiscal Day Automatically | Open the day on the first sale. When off, a day that reaches its maximum length is still followed by a new one, so sales never stop | On |
 | Open Day At | Also open a day at this time each day | empty |
 | Close Day At | Close the day at this time each day | empty |
 | Close Before Maximum (hours) | Close this long before ZIMRA's maximum day length | 1 |
 | Report Device Online (Ping) | Tell ZIMRA the device is online, as often as ZIMRA asks | On |
 | Certificate Warning (days) | Warn this long before the certificate expires | 30 |
-| Renew Certificates Automatically | Renew without asking | Off |
+| Renew Certificates Automatically | Renew without asking | On |
 | Notify Role | Who receives alerts | ZIMRA Manager |
 
 ### 2. Register the device
@@ -270,7 +270,15 @@ supplier's Tax ID.
 A device certificate is valid for a limited time (ZIMRA decides).
 - Managers are warned *Certificate Warning (days)* before expiry.
 - Renew with **Actions → Renew Certificate**, or enable automatic renewal.
-- An expired certificate stops all communication with ZIMRA. Invoices still submit and queue, but nothing reaches ZIMRA until the device is re-registered.
+- An expired certificate stops all communication with ZIMRA. Sales do not stop: invoices still submit, with a warning, and queue. Nothing reaches ZIMRA until ZIMRA issues the device a new certificate.
+
+## When ZIMRA is unavailable
+
+Sales never wait for ZIMRA, however long an outage lasts. Invoices are
+fiscalised and signed locally and queue in order. Fiscal days still close
+and roll over locally at their maximum length. Retries back off to every 30
+minutes, and the queue is sent in order once ZIMRA is back. Watch the
+**Sync Exceptions** report during a long outage.
 
 ## Troubleshooting
 

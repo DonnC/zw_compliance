@@ -49,7 +49,7 @@ and reports. There is no middleware service to run.
 **Fiscal device lifecycle**
 - Guided onboarding on the device form: verify the taxpayer with ZIMRA, register, receive the certificate, pull configuration. One click per step.
 - The ECC P-256 device key is generated on the server and stored encrypted, in a field only managers can see.
-- Certificate expiry warnings, with renewal by one click or automatically (opt-in).
+- Certificate expiry warnings, with automatic renewal (on by default) or one click.
 - Ping at ZIMRA's reporting frequency, plus a server-corrected clock so receipt dates never drift.
 - Several devices per company, chosen by POS Profile or by a company default.
 
