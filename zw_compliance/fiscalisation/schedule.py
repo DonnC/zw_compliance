@@ -140,7 +140,9 @@ def _certificate_care(name: str, settings) -> None:
 		notify_managers(
 			device,
 			_("ZIMRA certificate of {0} has expired").format(device.device_name),
-			_("ZIMRA refuses all requests from an expired certificate. Re-register the device."),
+			_(
+				"Invoices are still fiscalised, but ZIMRA refuses every request from an expired certificate, so they queue until ZIMRA issues the device a new certificate."
+			),
 		)
 		return
 	if settings.auto_renew_certificate:
