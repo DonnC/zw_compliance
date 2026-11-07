@@ -118,6 +118,6 @@ lists; on a site already set up it does nothing.
 
 ## Releasing
 
-1. Update [CHANGELOG.md](../CHANGELOG.md) and `zw_compliance/__init__.py`.
-2. Tag `vX.Y.Z`.
+1. Update [CHANGELOG.md](../CHANGELOG.md) and `zw_compliance/__init__.py`. While the version is below 1.0, new features and route changes raise the minor number; fixes raise the patch number.
+2. Merge `develop` into `main` and tag `vX.Y.Z` there.
 3. Any change to signing or numbering must be called out under **Compliance** in the changelog.

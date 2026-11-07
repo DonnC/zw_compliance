@@ -18,7 +18,7 @@ Test locations:
 | 1 | Open a fiscal day before issuing receipts | `day.day_for_receipt` opens a day (locally, under the device lock) before the first receipt | int: `test_submit_signs_locally_and_sync_submits`, `test_next_receipt_after_close_opens_a_new_day` |
 | 2 | getConfig before opening a day | `sync._open_day` calls getConfig, then getStatus, then openDay | int: all sync tests; e2e |
 | 3 | Store and print the taxpayer and branch data from getConfig | `device.apply_config`; snapshot on each `Zimra Fiscal Receipt`; print templates read the snapshot | int: `test_device_is_active_with_zimra_configuration`, `test_print_formats_render_fiscal_fields` |
-| 4 | Do not exceed `taxPayerDayMaxHrs` | `day._must_roll_over` (limit − margin) closes the day and rolls the next receipt into a new one; `schedule._maintain_device` auto-closes | int: `test_day_past_max_hours_is_closed_and_a_new_day_opened`, `test_day_is_closed_before_the_maximum_length`, `test_day_is_closed_at_the_configured_time` |
+| 4 | Do not exceed `taxPayerDayMaxHrs` | `day._must_roll_over` (limit − margin) closes the day and rolls the next receipt into a new one, whatever *Open Fiscal Day Automatically* says; `schedule._maintain_device` auto-closes | int: `test_day_past_max_hours_is_closed_and_a_new_day_opened`, `test_day_is_closed_before_the_maximum_length`, `test_day_is_closed_at_the_configured_time`, `test_a_day_past_its_length_rolls_over_even_without_automatic_opening` |
 | 5 | Warn before the day end (`taxpayerDayEndNotificationHrs`) | `schedule._maintain_device`: Notification Log and realtime alert to the notify role | int: `test_notice_before_the_day_end_is_sent_once` |
 | 6 | `receiptGlobalNo` sequential from 1, continuing across days | `outbox.fiscalise` under `SELECT … FOR UPDATE`; unique (device, fiscal day, globalNo) | int: `test_receipts_are_sequential_and_chained`, `test_next_receipt_after_close_opens_a_new_day` |
 | 7 | Global number may restart on the first receipt of a new day | `numbering.py`, applied only when `day.open_local_day` creates a day (or an empty, unannounced day takes its first sale); per-device policy Near Limit (default) / Every Fiscal Day; at the limit the day is closed (`day._close_at_number_limit`) and managers alerted | int: `test_numbering.TestGlobalNumbering`; unit: `TestNumberingPolicy` |
@@ -30,7 +30,7 @@ Test locations:
 | 13 | Send one by one, ascending, never skipping; repeat failed submissions | `sync._submit_receipts` stops at the first failure or rejection; a new sale lifts the back-off (`sync.retry_now`) | int: `test_sequence_survives_a_flapping_connection`, `test_unreachable_fdms_queues_then_recovers_in_order`, `test_lost_answer_is_resent_without_duplicate`, `test_server_errors_are_retried` |
 | 14 | Send immediately if online and nothing is waiting, else queue | Outbox plus immediate job, every-minute safety net | int: resilience tests; e2e |
 | 15 | Update counters per receipt and reset on a new day | `day` counters updated in `outbox`, recomputed from signed payloads before close | fdms: counter tests; int: `test_credit_note_is_negative_and_the_day_closes` |
-| 16 | Renew the certificate before expiry | `schedule._certificate_care`: warnings from `certificate_warning_days`; opt-in auto-renew; manual **Renew Certificate** | int: `test_warning_when_close_to_expiry`, `test_automatic_renewal_issues_a_new_certificate_and_key`, `test_expired_certificate_is_reported` |
+| 16 | Renew the certificate before expiry | `schedule._certificate_care`: warnings from `certificate_warning_days`; auto-renew on by default; manual **Renew Certificate** | int: `test_warning_when_close_to_expiry`, `test_automatic_renewal_issues_a_new_certificate_and_key`, `test_expired_certificate_is_reported` |
 | 17–21 | Offline file mode | Not implemented (online mode only); see *Known gaps* | n/a |
 | 22 | No uninstall with unsent invoices | `setup.install.before_uninstall` | int: `test_uninstall_is_refused_while_receipts_are_unsent` |
 
@@ -120,6 +120,7 @@ service differ from the PDF, these choices were made.
 10. **Refused close, two forms.** §4.11 says the day "remains opened, and its status is changed to FiscalDayCloseFailed". Both readings are handled: status FiscalDayCloseFailed, or FiscalDayOpened with a closing error code.
 11. **Rejected receipts stop the queue.** A receipt FDMS refuses outright (RCPT01/RCPT02, HTTP 400) is not skipped, because skipping would make every later receipt Grey. Managers are alerted and the queue resumes once it is fixed.
 12. **Cash and non-trade discounts are refused.** They reduce the total without reducing VAT, which no receipt line can express. Discounts on net total are fully supported.
+13. **An expired certificate warns; it does not stop sales.** ZIMRA refuses every call from an expired certificate (§7.3), so receipts queue until ZIMRA issues a new one. Refusing the sale would halt the business for a fault it cannot fix at the till. Signing with the expired key queues receipts whose acceptance after re-registration has not been confirmed live.
 
 ## Lessons from live testing
 

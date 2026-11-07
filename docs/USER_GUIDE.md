@@ -219,7 +219,7 @@ in.
 
 ## Reports and the workspace
 
-Open the **ZIMRA Fiscalisation** workspace.
+Open the **Fiscalisation** workspace for the dashboard. Click the arrow beside it in the sidebar to reach **Fiscal Operations**, **Fiscal Reports** and **Fiscal Setup**. The reports below are on **Fiscal Reports**.
 
 | Report | Answers |
 |---|---|

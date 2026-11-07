@@ -1,0 +1,132 @@
+{
+ "app": "zw_compliance",
+ "charts": [],
+ "content": "[{\"id\": \"5A6JsKbK1K\", \"type\": \"paragraph\", \"data\": {\"text\": \"<span class=\\\"text-muted\\\">Sell, then follow each receipt through to ZIMRA.</span>\", \"col\": 12}}, {\"id\": \"4Ejeh1xYi0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"New Sales Invoice\", \"col\": 3}}, {\"id\": \"jPUHTrHmwK\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Point of Sale\", \"col\": 3}}, {\"id\": \"WlZdfYfNBq\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Fiscal Receipts\", \"col\": 3}}, {\"id\": \"WRvqrCBNHZ\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Fiscal Days\", \"col\": 3}}, {\"id\": \"TOd7HDjEEK\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sync Exceptions\", \"col\": 3}}, {\"id\": \"8UdICB1r2S\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"wpGQB2wpq2\", \"type\": \"card\", \"data\": {\"card_name\": \"Daily Operations\", \"col\": 4}}]",
+ "creation": "2026-11-07 09:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "list",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Fiscal Operations",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Daily Operations",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fiscal Day",
+   "link_count": 0,
+   "link_to": "Zimra Fiscal Day",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fiscal Receipt",
+   "link_count": 0,
+   "link_to": "Zimra Fiscal Receipt",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Sales Invoice",
+   "link_count": 0,
+   "link_to": "Sales Invoice",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Invoice",
+   "link_count": 0,
+   "link_to": "POS Invoice",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-11-07 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "Fiscal Operations",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Fiscalisation",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "ZIMRA Manager"
+  },
+  {
+   "role": "ZIMRA User"
+  },
+  {
+   "role": "Accounts Manager"
+  }
+ ],
+ "sequence_id": 31.0,
+ "shortcuts": [
+  {
+   "doc_view": "New",
+   "label": "New Sales Invoice",
+   "link_to": "Sales Invoice",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Point of Sale",
+   "link_to": "point-of-sale",
+   "type": "Page"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Fiscal Receipts",
+   "link_to": "Zimra Fiscal Receipt",
+   "stats_filter": "{\"sync_status\":[\"in\",[\"Queued\",\"Retrying\",\"Rejected\"]]}",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Fiscal Days",
+   "link_to": "Zimra Fiscal Day",
+   "stats_filter": "{\"status\":[\"not in\",[\"Closed\"]]}",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Sync Exceptions",
+   "link_to": "ZIMRA Sync Exceptions",
+   "type": "Report"
+  }
+ ],
+ "title": "Fiscal Operations"
+}

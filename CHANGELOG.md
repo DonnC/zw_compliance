@@ -5,19 +5,21 @@ Versions follow [Semantic Versioning](https://semver.org/). Changes that
 affect what is signed, numbered or sent to ZIMRA are listed under
 **Compliance**.
 
-## [Unreleased]
+## [0.2.0] - 2026-11-07
 
 ### Added
 
 - Bench commands `zw-demo-seed` (with `--days`) and `zw-demo-wipe`.
+- Agent skills in `.claude/skills/`, indexed from `AGENTS.md`: the ZIMRA API, Zimbabwean tax law, the fiscal engine, Frappe and ERPNext, fiscal support and new compliance pillars. A test keeps their file paths and rule codes tied to the repository.
 
 ### Changed
 
+- The workspace is now *Fiscalisation*, a dashboard with three pages in the sidebar: *Fiscal Operations*, *Fiscal Reports* and *Fiscal Setup*. Its route moves to `/app/fiscalisation`; a patch removes the old workspace. Replace any saved link to `/app/zimra-fiscalisation`.
 - ZIMRA outages never stop sales. A fiscal day that reaches its maximum length is always followed by a new local day, even with *Open Fiscal Day Automatically* off.
 - An expired device certificate no longer blocks invoices. They are fiscalised and queued, with a warning, until ZIMRA issues a new certificate.
 - *Renew Certificates Automatically* is on by default.
 
-## [0.1.0] - unreleased
+## [0.1.0] - 2026-10-30
 
 First implementation of the ZIMRA *Fiscal Device Gateway API* v7.2 (online
 mode). This replaces the earlier prototype entirely.

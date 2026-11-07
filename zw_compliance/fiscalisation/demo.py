@@ -1,6 +1,6 @@
 """Demo data: weeks of realistic fiscal history, produced by the real flow.
 
-Fills the ZIMRA Fiscalisation workspace and reports without a ZIMRA
+Fills the Fiscalisation workspace and reports without a ZIMRA
 connection. Nothing is shortcut: invoices are submitted through ERPNext,
 signed by the outbox and synced to the in-process FDMS (``tests/simulator.py``)
 with fiscal days opened and closed every day. Past days are replayed through
@@ -9,8 +9,8 @@ the clock hook ``frappe.flags.zimra_clock``.
 Everything lives in its own company, *ZW Demo Traders*, on a device marked
 **Demo Device**: it never connects to ZIMRA and the scheduler ignores it. ::
 
-    bench --site <site> zw-demo-seed
-    bench --site <site> zw-demo-wipe
+    bench - -site < site > zw - demo - seed
+    bench - -site < site > zw - demo - wipe
 
 ``seed`` wipes any earlier demo first. ``wipe`` removes every record the demo
 created; fiscal records are removed directly, because their normal
@@ -105,7 +105,7 @@ def seed(days: int = 21, seed_value: int = 2026) -> None:
 			_trade_day(device, fdms, clock, rng, date, is_today=offset == 0)
 			frappe.db.commit()
 		print(f"Demo: {frappe.db.count(RECEIPT, {'company': COMPANY})} fiscal receipts created.")
-		print("Open the ZIMRA Fiscalisation workspace and pick company 'ZW Demo Traders'.")
+		print("Open the Fiscalisation workspace and pick company 'ZW Demo Traders'.")
 	except Exception:
 		frappe.db.rollback()
 		raise

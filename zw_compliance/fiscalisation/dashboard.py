@@ -1,4 +1,4 @@
-"""Data for the ZIMRA Fiscalisation workspace: compliance-health number cards
+"""Data for the Fiscalisation workspace: compliance-health number cards
 and the money charts (fiscal sales and output VAT).
 
 Amounts are never added across currencies: each chart shows one currency,

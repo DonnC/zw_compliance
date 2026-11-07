@@ -1,0 +1,126 @@
+{
+ "app": "zw_compliance",
+ "charts": [],
+ "content": "[{\"id\": \"qivsQS99td\", \"type\": \"paragraph\", \"data\": {\"text\": \"<span class=\\\"text-muted\\\">What was fiscalised, what ZIMRA accepted, and what you owe.</span>\", \"col\": 12}}, {\"id\": \"gxbkASRMrb\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Device Status\", \"col\": 3}}, {\"id\": \"YMhYL7ixw3\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"0Ir66FXGj7\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 4}}]",
+ "creation": "2026-11-07 09:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "file",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Fiscal Reports",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 6,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Fiscal Day Summary (Z)",
+   "link_count": 0,
+   "link_to": "ZIMRA Fiscal Day Summary",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Fiscal Receipt Register",
+   "link_count": 0,
+   "link_to": "ZIMRA Fiscal Receipt Register",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Sync Exceptions",
+   "link_count": 0,
+   "link_to": "ZIMRA Sync Exceptions",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "VAT Summary",
+   "link_count": 0,
+   "link_to": "ZIMRA VAT Summary",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Fiscalisation Reconciliation",
+   "link_count": 0,
+   "link_to": "ZIMRA Fiscalisation Reconciliation",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Device Status",
+   "link_count": 0,
+   "link_to": "ZIMRA Device Status",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-11-07 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "Fiscal Reports",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Fiscalisation",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "ZIMRA Manager"
+  },
+  {
+   "role": "ZIMRA User"
+  },
+  {
+   "role": "Accounts Manager"
+  }
+ ],
+ "sequence_id": 32.0,
+ "shortcuts": [
+  {
+   "doc_view": "",
+   "label": "Device Status",
+   "link_to": "ZIMRA Device Status",
+   "type": "Report"
+  }
+ ],
+ "title": "Fiscal Reports"
+}
