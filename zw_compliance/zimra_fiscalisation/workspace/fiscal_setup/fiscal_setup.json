@@ -1,0 +1,151 @@
+{
+ "app": "zw_compliance",
+ "charts": [],
+ "content": "[{\"id\": \"2BZ7jX0L8j\", \"type\": \"paragraph\", \"data\": {\"text\": \"<span class=\\\"text-muted\\\">Devices, ZIMRA settings and how your taxes map to ZIMRA.</span>\", \"col\": 12}}, {\"id\": \"x4AcTFDiAj\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Fiscal Devices\", \"col\": 3}}, {\"id\": \"Blrdx684TG\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Settings\", \"col\": 3}}, {\"id\": \"t9nbKTEkXi\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"4V8hjwhRcc\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 6}}, {\"id\": \"NrT2emRzQi\", \"type\": \"card\", \"data\": {\"card_name\": \"Taxes\", \"col\": 6}}]",
+ "creation": "2026-11-07 09:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "setting",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Fiscal Setup",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fiscal Device",
+   "link_count": 0,
+   "link_to": "Zimra Fiscal Device",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "ZIMRA Settings",
+   "link_count": 0,
+   "link_to": "Zimra Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tax Mapping",
+   "link_count": 0,
+   "link_to": "Zimra Tax Mapping",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "HS Codes",
+   "link_count": 0,
+   "link_to": "Zimra HSN Code",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Taxes",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item Tax Template",
+   "link_count": 0,
+   "link_to": "Item Tax Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Sales Taxes and Charges Template",
+   "link_count": 0,
+   "link_to": "Sales Taxes and Charges Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Taxes and Charges Template",
+   "link_count": 0,
+   "link_to": "Purchase Taxes and Charges Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-11-07 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ZIMRA Fiscalisation",
+ "name": "Fiscal Setup",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Fiscalisation",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "ZIMRA Manager"
+  },
+  {
+   "role": "ZIMRA User"
+  },
+  {
+   "role": "Accounts Manager"
+  }
+ ],
+ "sequence_id": 33.0,
+ "shortcuts": [
+  {
+   "doc_view": "List",
+   "label": "Fiscal Devices",
+   "link_to": "Zimra Fiscal Device",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Settings",
+   "link_to": "Zimra Settings",
+   "type": "DocType"
+  }
+ ],
+ "title": "Fiscal Setup"
+}

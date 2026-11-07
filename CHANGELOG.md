@@ -5,15 +5,21 @@ Versions follow [Semantic Versioning](https://semver.org/). Changes that
 affect what is signed, numbered or sent to ZIMRA are listed under
 **Compliance**.
 
-## [Unreleased]
+## [0.2.0] - 2026-11-07
+
+### Added
+
+- Bench commands `zw-demo-seed` (with `--days`) and `zw-demo-wipe`.
+- Agent skills in `.claude/skills/`, indexed from `AGENTS.md`: the ZIMRA API, Zimbabwean tax law, the fiscal engine, Frappe and ERPNext, fiscal support and new compliance pillars. A test keeps their file paths and rule codes tied to the repository.
 
 ### Changed
 
+- The workspace is now *Fiscalisation*, a dashboard with three pages in the sidebar: *Fiscal Operations*, *Fiscal Reports* and *Fiscal Setup*. Its route moves to `/app/fiscalisation`; a patch removes the old workspace. Replace any saved link to `/app/zimra-fiscalisation`.
 - ZIMRA outages never stop sales. A fiscal day that reaches its maximum length is always followed by a new local day, even with *Open Fiscal Day Automatically* off.
 - An expired device certificate no longer blocks invoices. They are fiscalised and queued, with a warning, until ZIMRA issues a new certificate.
 - *Renew Certificates Automatically* is on by default.
 
-## [0.1.0] - unreleased
+## [0.1.0] - 2026-10-30
 
 First implementation of the ZIMRA *Fiscal Device Gateway API* v7.2 (online
 mode). This replaces the earlier prototype entirely.
@@ -38,7 +44,7 @@ mode). This replaces the earlier prototype entirely.
 - Reports: Fiscal Day Summary, Fiscal Receipt Register, Sync Exceptions, VAT Summary, Fiscalisation Reconciliation, Device Status. Workspace with number cards and charts.
 - Remote JSON API (`zw_compliance.api.v1.fiscalisation`) with an idempotent `client_reference`.
 - Workspace in two parts: *Compliance health* (unfiscalised invoices, awaiting, rejected, flagged, sync errors, pending closes, fiscal-day hours left, certificate days left, attention lists) and *Sales and VAT* (fiscal sales and output VAT per currency, receipt breakdowns).
-- Demo data (`zw_compliance.fiscalisation.demo.seed` / `wipe`): three weeks of history through the real flow against the built-in simulator, isolated in its own company and fully removable.
+- Demo data (`bench zw-demo-seed` / `zw-demo-wipe`): three weeks of history through the real flow against the built-in simulator, isolated in its own company and fully removable.
 - A new sale or **Send Now** retries a connection failure immediately instead of waiting out the back-off, so the queue drains as soon as the line is back.
 - In-process FDMS for tests (port of the zimra-fdms simulator), plus an end-to-end check against the zimra-fdms simulator over mutual TLS.
 - App logo, shown in the desk and on the Frappe v15+ apps screen (for ZIMRA, System and Accounts managers).

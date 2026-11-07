@@ -10,7 +10,7 @@ Thank you for helping Zimbabwean businesses stay compliant on ERPNext.
 
 ## Pull requests
 
-1. Branch from `main`. Keep each PR to one change.
+1. Branch from `develop` and open the PR against it. Keep each PR to one change.
 2. Follow [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): `pre-commit` and all three test layers must pass.
 3. Changes to what is signed, numbered or sent to ZIMRA need:
    - a reference to the specification section;
@@ -19,6 +19,10 @@ Thank you for helping Zimbabwean businesses stay compliant on ERPNext.
    - a **Compliance** entry in [CHANGELOG.md](CHANGELOG.md).
 4. User-visible changes update [docs/USER_GUIDE.md](docs/USER_GUIDE.md). API changes update [docs/API.md](docs/API.md) and keep the response envelope unchanged.
 5. Strings shown to users go through `_()` / `__()`.
+
+## Working with an AI agent
+
+[AGENTS.md](AGENTS.md) holds the project rules, and `.claude/skills/` holds skills for ZIMRA, Zimbabwean tax law, Frappe and ERPNext. Check an agent's work against the primary sources they cite.
 
 ## Style
 

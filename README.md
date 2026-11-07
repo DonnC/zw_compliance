@@ -87,7 +87,7 @@ and reports. There is no middleware service to run.
 - Supplier invoices use the matching purchase templates. Input VAT goes to the input account, and the VAT Summary report sets it against output VAT.
 
 **Reports and workspace**
-- A *ZIMRA Fiscalisation* workspace in two parts:
+- A *Fiscalisation* workspace with *Fiscal Operations*, *Fiscal Reports* and *Fiscal Setup* pages in the sidebar. Its dashboard has two parts:
   - **Compliance health**: unfiscalised invoices, receipts awaiting ZIMRA, rejected and flagged receipts, devices with sync errors, day closes pending, hours left in the fiscal day, certificate days left; plus live lists of what needs attention;
   - **Sales and VAT**: fiscal sales per day and output VAT per tax (per currency), receipts by status, type and day, credit notes.
 - Six reports:
@@ -139,7 +139,7 @@ What ZIMRA requires on paper (§10), produced from ERPNext:
 And what the business sees in ERPNext, starting with the workspace:
 
 <p align="center">
-  <img src="docs/media/fiscalization-workspace.png" alt="ZIMRA Fiscalisation workspace: compliance health cards, attention lists and fiscal sales" width="900">
+  <img src="docs/media/fiscalization-workspace.png" alt="Fiscalisation workspace: compliance health cards, attention lists and fiscal sales" width="900">
 </p>
 
 | | |
@@ -158,11 +158,11 @@ dropped connection today) against the built-in FDMS simulator. It lives in its
 own company and is removed with one command.
 
 ```bash
-bench --site <site> execute zw_compliance.fiscalisation.demo.seed   # ZW Demo Traders
-bench --site <site> execute zw_compliance.fiscalisation.demo.wipe   # removes all of it
+bench --site <site> zw-demo-seed   # ZW Demo Traders
+bench --site <site> zw-demo-wipe   # removes all of it
 ```
 
-Then switch to the company *ZW Demo Traders* (avatar menu → **Session Defaults**) and open the **ZIMRA Fiscalisation** workspace.
+Then switch to the company *ZW Demo Traders* (avatar menu → **Session Defaults**) and open the **Fiscalisation** workspace.
 
 ## Install
 
