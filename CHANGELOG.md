@@ -7,6 +7,10 @@ affect what is signed, numbered or sent to ZIMRA are listed under
 
 ## [Unreleased]
 
+### Added
+
+- Bench commands `zw-demo-seed` (with `--days`) and `zw-demo-wipe`.
+
 ### Changed
 
 - ZIMRA outages never stop sales. A fiscal day that reaches its maximum length is always followed by a new local day, even with *Open Fiscal Day Automatically* off.
@@ -38,7 +42,7 @@ mode). This replaces the earlier prototype entirely.
 - Reports: Fiscal Day Summary, Fiscal Receipt Register, Sync Exceptions, VAT Summary, Fiscalisation Reconciliation, Device Status. Workspace with number cards and charts.
 - Remote JSON API (`zw_compliance.api.v1.fiscalisation`) with an idempotent `client_reference`.
 - Workspace in two parts: *Compliance health* (unfiscalised invoices, awaiting, rejected, flagged, sync errors, pending closes, fiscal-day hours left, certificate days left, attention lists) and *Sales and VAT* (fiscal sales and output VAT per currency, receipt breakdowns).
-- Demo data (`zw_compliance.fiscalisation.demo.seed` / `wipe`): three weeks of history through the real flow against the built-in simulator, isolated in its own company and fully removable.
+- Demo data (`bench zw-demo-seed` / `zw-demo-wipe`): three weeks of history through the real flow against the built-in simulator, isolated in its own company and fully removable.
 - A new sale or **Send Now** retries a connection failure immediately instead of waiting out the back-off, so the queue drains as soon as the line is back.
 - In-process FDMS for tests (port of the zimra-fdms simulator), plus an end-to-end check against the zimra-fdms simulator over mutual TLS.
 - App logo, shown in the desk and on the Frappe v15+ apps screen (for ZIMRA, System and Accounts managers).

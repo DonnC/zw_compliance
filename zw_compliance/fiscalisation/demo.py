@@ -9,8 +9,8 @@ the clock hook ``frappe.flags.zimra_clock``.
 Everything lives in its own company, *ZW Demo Traders*, on a device marked
 **Demo Device**: it never connects to ZIMRA and the scheduler ignores it. ::
 
-    bench --site <site> execute zw_compliance.fiscalisation.demo.seed
-    bench --site <site> execute zw_compliance.fiscalisation.demo.wipe
+    bench --site <site> zw-demo-seed
+    bench --site <site> zw-demo-wipe
 
 ``seed`` wipes any earlier demo first. ``wipe`` removes every record the demo
 created; fiscal records are removed directly, because their normal

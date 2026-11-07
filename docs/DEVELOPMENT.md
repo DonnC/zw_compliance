@@ -82,8 +82,8 @@ It rolls everything back.
 ### Demo data
 
 ```bash
-bench --site dev.local execute zw_compliance.fiscalisation.demo.seed --kwargs "{'days': 21}"
-bench --site dev.local execute zw_compliance.fiscalisation.demo.wipe
+bench --site dev.local zw-demo-seed --days 21
+bench --site dev.local zw-demo-wipe
 ```
 
 `fiscalisation/demo.py` runs the real flow (ERPNext submit → outbox → sync)

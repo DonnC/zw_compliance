@@ -158,8 +158,8 @@ dropped connection today) against the built-in FDMS simulator. It lives in its
 own company and is removed with one command.
 
 ```bash
-bench --site <site> execute zw_compliance.fiscalisation.demo.seed   # ZW Demo Traders
-bench --site <site> execute zw_compliance.fiscalisation.demo.wipe   # removes all of it
+bench --site <site> zw-demo-seed   # ZW Demo Traders
+bench --site <site> zw-demo-wipe   # removes all of it
 ```
 
 Then switch to the company *ZW Demo Traders* (avatar menu → **Session Defaults**) and open the **ZIMRA Fiscalisation** workspace.

@@ -312,8 +312,8 @@ fiscalised by a built-in ZIMRA simulator. Its device is marked **Demo Device**
 and never connects to ZIMRA.
 
 ```bash
-bench --site <site> execute zw_compliance.fiscalisation.demo.seed
-bench --site <site> execute zw_compliance.fiscalisation.demo.wipe
+bench --site <site> zw-demo-seed
+bench --site <site> zw-demo-wipe
 ```
 
 `wipe` removes everything the demo created, and nothing else.
